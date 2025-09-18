@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{5D718207-9152-46A2-B71C-16DCB9EA69B6}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BulkLoadForTransporters</RootNamespace>
+    <AssemblyName>BulkLoadForTransporters</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\workshop\content\294100\2009463077\1.5\Assemblies\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="CaravanItemSelectionEnhanced">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\workshop\content\294100\2854310627\1.6\Assemblies\CaravanItemSelectionEnhanced.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PickUpAndHaul">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\workshop\content\294100\1279012058\1.6\Assemblies\PickUpAndHaul.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Core\Adapters\MapPortalAdapter.cs" />
+    <Compile Include="Core\CentralLoadManager.cs" />
+    <Compile Include="Core\Components\CompBulkLoadable.cs" />
+    <Compile Include="Core\Components\CompBulkLoadablePortal.cs" />
+    <Compile Include="Core\DefInjection.cs" />
+    <Compile Include="Core\Interfaces\IManagedLoadable.cs" />
+    <Compile Include="Core\JobDefRegistry.cs" />
+    <Compile Include="Core\LoadingPlanner.cs" />
+    <Compile Include="Core\BulkLoadForTransportersMod.cs" />
+    <Compile Include="Core\Utils\BulkLoad_Utility.cs" />
+    <Compile Include="Core\Interfaces\IBulkHaulState.cs" />
+    <Compile Include="Core\Interfaces\ILoadable.cs" />
+    <Compile Include="Core\Main.cs" />
+    <Compile Include="Core\Adapters\LoadTransportersAdapter.cs" />
+    <Compile Include="Core\Utils\SafeUnloadManager.cs" />
+    <Compile Include="Core\Utils\LoadTransporters_WorkGiverUtility.cs" />
+    <Compile Include="HarmonyPatches\LoadPortal\EnterPortalUtility_ThingsBeingHauledTo_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadPortal\MapPortal_SubtractFromToLoadList_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadPortal\WorkGiver_LoadPortal_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadPortal\FloatMenuOption_LoadPortal_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadPortal\MapPortal_AnyPawnCanLoadAnythingNow_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\AnyPawnCanLoadAnythingNow_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\AutoOpenTabs_Patch.cs.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\BoardingInventorySync_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\CompShuttle_CheckAutoload_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\Game_DeinitAndRemoveMap_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\JobGiver_EnterTransporter_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\TransporterUtility_AllSendables_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\WorkGiver_LoadTransporters_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\Pawn_DeSpawn_Patch.cs.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\Pawn_JobTracker_EndCurrentJob_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\ScribeSaver_InitSaving_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\SmartSubtraction_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\FloatMenuOption_LoadTransporters_Patch.cs" />
+    <Compile Include="HarmonyPatches\UnloadCarriers\FloatMenuOption_UnloadCarriers_Patch.cs" />
+    <Compile Include="HarmonyPatches\UnloadCarriers\WorkGiver_UnloadCarriers_Patch.cs" />
+    <Compile Include="Jobs\JobDriver_BulkLoadBase.cs" />
+    <Compile Include="Jobs\JobDriver_LoadPortalInBulk.cs" />
+    <Compile Include="Jobs\JobDriver_UnloadPackAnimalInBulk.cs" />
+    <Compile Include="Jobs\Toils_LoadPortal\Toil_BeginUnloadSessionForPortal.cs" />
+    <Compile Include="Jobs\Toils_LoadPortal\Toil_DepositItemForPortal.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_BeginUnloadSession.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_DepositItem.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_DropAndTakeFromContainer.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_EndUnloadSession.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_GotoHaulable.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_PrepareNextUnloadItem.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_PrepareToUnloadFromInventory.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_ReconcileHauledState.cs.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_ReleaseReservation.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_ReplanJob.cs" />
+    <Compile Include="Jobs\Toils_UnloadCarriers\Toil_SelectNextItemFromContainer.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_TakeToCarry.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_TakeToInventory.cs" />
+    <Compile Include="Jobs\JobDriver_LoadTransportersInBulk.cs" />
+    <Compile Include="Jobs\Toils_UnloadCarriers\Toil_TransferFromContainer.cs" />
+    <Compile Include="Jobs\Toils_UnloadCarriers\Toil_FinalizeUnload.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Core\Settings.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

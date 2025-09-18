@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <JobDef>
+    <defName>LoadTransportersInBulk_Load</defName>
+    <driverClass>BulkLoadForTransporters.Jobs.JobDriver_LoadTransportersInBulk</driverClass>
+    <reportString>BulkLoadForTransporters.ReportString.Loading</reportString>
+    <suspendable>false</suspendable>
+    <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+  </JobDef>
+
+  <JobDef>
+    <defName>UnloadPackAnimalInBulk</defName>
+    <driverClass>BulkLoadForTransporters.Jobs.JobDriver_UnloadPackAnimalInBulk</driverClass>
+    <reportString>BulkLoadForTransporters.ReportString.UnloadingCarrier</reportString>
+    <suspendable>false</suspendable>
+    <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+  </JobDef>
+
+  <JobDef>
+    <defName>LoadPortalInBulk</defName>
+    <driverClass>BulkLoadForTransporters.Jobs.JobDriver_LoadPortalInBulk</driverClass>
+    <suspendable>false</suspendable>
+    <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+  </JobDef>
+  
+</Defs>

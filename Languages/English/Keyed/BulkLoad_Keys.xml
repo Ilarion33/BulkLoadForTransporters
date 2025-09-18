@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+  <!-- JobDef Report String (Pawn status) -->
+  <BulkLoadForTransporters.ReportString.Loading>Bulk loading {0}</BulkLoadForTransporters.ReportString.Loading>
+  <BulkLoadForTransporters.ReportString.Loading_Generic>Bulk loading</BulkLoadForTransporters.ReportString.Loading_Generic>
+
+  <BulkLoadForTransporters.ReportString.LoadingPortal>Bulk loading into {0}</BulkLoadForTransporters.ReportString.LoadingPortal>
+  <BulkLoadForTransporters.ReportString.LoadingPortal_Generic>Bulk loading</BulkLoadForTransporters.ReportString.LoadingPortal_Generic>
+
+
+  <BulkLoadForTransporters.ReportString.Unloading>Bulk unloading {0}.</BulkLoadForTransporters.ReportString.Unloading>
+  <BulkLoadForTransporters.ReportString.Unloading_Generic>Bulk unloading</BulkLoadForTransporters.ReportString.Unloading_Generic>
+
+  <!-- Right-Click Float Menu Option -->
+  <BulkLoadForTransporters.PriorityLoadCommand>Prioritize bulk loading {0}</BulkLoadForTransporters.PriorityLoadCommand>
+  <BulkLoadForTransporters.PriorityUnloadCommand>Prioritize bulk unloading {0}</BulkLoadForTransporters.PriorityUnloadCommand>
+  <BulkLoadForTransporters.PriorityLoadUntilCompleteCommand>Prioritize bulk loading {0} until complete</BulkLoadForTransporters.PriorityLoadUntilCompleteCommand>
+  
+  <!-- Message (Top-left notification) -->
+  <BulkLoadForTransporters.NoHaulPlanFound>Could not create a bulk load plan for {0}.</BulkLoadForTransporters.NoHaulPlanFound>
+
+  <!-- ==================== Mod Settings ==================== -->
+
+  <BulkLoadForTransporters.Settings.Header.BulkLoad>Enable Bulk Load Transporters</BulkLoadForTransporters.Settings.Header.BulkLoad>
+  <BulkLoadForTransporters.Settings.Header.BulkLoad.Tooltip>Settings for the core feature: loading transport pods, shuttles, etc., in bulk.</BulkLoadForTransporters.Settings.Header.BulkLoad.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.BulkLoadPortal>Enable Bulk Load Portals</BulkLoadForTransporters.Settings.Header.BulkLoadPortal>
+  <BulkLoadForTransporters.Settings.Header.BulkLoadPortal.Tooltip>Enables the bulk loading feature for pit gates, cave exits, and other portals.</BulkLoadForTransporters.Settings.Header.BulkLoadPortal.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.BulkUnload>Enable Bulk Unload Carriers</BulkLoadForTransporters.Settings.Header.BulkUnload>
+  <BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>Settings for the additional feature: unloading pack animals and other carriers in bulk.</BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.General>General Settings</BulkLoadForTransporters.Settings.Header.General>
+  
+  
+  <BulkLoadForTransporters.Settings.AiUpdateFrequency>Update Frequency (Ticks): {0}</BulkLoadForTransporters.Settings.AiUpdateFrequency>
+  <BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>Lower values mean faster colonists' reaction but may cost more performance. Higher values improve performance.\nDefault: 60 (1 second).</BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>
+
+  <!-- <BulkLoadForTransporters.Settings.StopPlanningAtPercent>Load satisfaction threshold: {0}</BulkLoadForTransporters.Settings.StopPlanningAtPercent>
+  <BulkLoadForTransporters.Settings.StopPlanningAtPercent.Tooltip>When the planned hauling mass reaches this percentage of the pawn's physical capacity, the colonists will stop looking for more items to "top off" the load. This prevents pawns from making inefficient long-distance trips just to fill the last bit of space.\nDefault: 98%.</BulkLoadForTransporters.Settings.StopPlanningAtPercent.Tooltip> -->
+  
+  <BulkLoadForTransporters.Settings.EnableContinuousLoading>Enable 'load until complete' command</BulkLoadForTransporters.Settings.EnableContinuousLoading>
+  <BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>Adds a right-click option to make colonists continuously work on loading transporters in an area until all tasks are done.</BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>
+  
+  <BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct>Min free backpack space to unload carrier: {0}</BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct>
+  <BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct.Tooltip>To start a new 'bulk unload carrier' job, a colonist's backpack must have at least this much free space. This prevents pawns with nearly-full backpacks from making inefficient trips. They will prioritize unloading their own backpack first.\nDefault: 50%.</BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct.Tooltip>
+  
+  <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>Reserve carrier during bulk unload</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>
+  <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>Determines if the carrier is reserved during the unloading process.\n\nEnabled: The job is uninterruptible, similar to vanilla behavior.\n\nDisabled: The job will be automatically cancelled if there is another task like roping needs the carrier.</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>
+
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius>Opportunity Scan Radius (Tiles): {0}</BulkLoadForTransporters.Settings.OpportunityScanRadius>
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius.Unlimited>Unlimited</BulkLoadForTransporters.Settings.OpportunityScanRadius.Unlimited>
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>When a hauler has items in their Pick Up And Haul inventory, how far will they look for transport pod loading opportunities?\nDefault: 40. Set to max for unlimited (whole map) scanning.</BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>
+
+  <BulkLoadForTransporters.Settings.PathfindingCandidates>Pathfinding Accuracy vs. Performance: {0}</BulkLoadForTransporters.Settings.PathfindingCandidates>
+  <BulkLoadForTransporters.Settings.PathfindingCandidates.Tooltip>Controls the trade-off between pathfinding accuracy and performance. Higher values result in more intelligent routes but require more processing.\n\n1: Colonists decide which item to pick up next based only on straight-line distance. \n\n2-6: Colonists first identify the N closest targets by straight-line distance, then calculate the actual walking distance for only that group to find the truly optimal target. \n\nDefault: 3.</BulkLoadForTransporters.Settings.PathfindingCandidates.Tooltip>
+
+  <BulkLoadForTransporters.Settings.VisualUnloadDelay>Visual Delay (Ticks): {0}</BulkLoadForTransporters.Settings.VisualUnloadDelay>
+  <BulkLoadForTransporters.Settings.VisualUnloadDelay.Tooltip>Controls the small visual delay when processing each item into a transporter. A lower value makes processing faster.\nDefault: 15. Set to 0 to make it instant.</BulkLoadForTransporters.Settings.VisualUnloadDelay.Tooltip>  
+  
+  <BulkLoadForTransporters.Settings.CleanupOnSave>Interrupt bulk load jobs on save</BulkLoadForTransporters.Settings.CleanupOnSave>
+  <BulkLoadForTransporters.Settings.CleanupOnSave.Tooltip>[Recommended] This option ensures the mod can be safely removed from a save game.\n\nWhen enabled, any ongoing bulk loading jobs will be safely interrupted whenever you save the game. This prevents game-breaking freezes when you load that save after uninstalling this mod.\n\nIf you do not intend to uninstall this mod, you can disable this option to prevent ongoing loading jobs from being interrupted by saving.</BulkLoadForTransporters.Settings.CleanupOnSave.Tooltip>
+
+  <BulkLoadForTransporters.Settings.AutoOpenTransporterContents>Auto-open 'Contents' tab for transporters</BulkLoadForTransporters.Settings.AutoOpenTransporterContents>
+  <BulkLoadForTransporters.Settings.AutoOpenTransporterContents.Tooltip>When you select a transport pod or shuttle, automatically open the 'Contents' tab.</BulkLoadForTransporters.Settings.AutoOpenTransporterContents.Tooltip>
+  <BulkLoadForTransporters.Settings.AutoOpenCarrierGear>Auto-open 'Gear' tab for carriers</BulkLoadForTransporters.Settings.AutoOpenCarrierGear>
+  <BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip>When you select a pack animal (carrier), automatically open the 'Gear' tab to see its inventory.</BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip>
+
+</LanguageData>

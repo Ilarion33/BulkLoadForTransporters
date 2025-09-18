@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+	<name>Bulk Load For Transporters</name>
+	
+	<author>Ilarion</author>
+	
+	<supportedVersions>
+		<li>1.6</li>
+	</supportedVersions>
+	
+	<packageId>Ilarion.BulkLoadForTransporters</packageId>
+	
+	<modDependencies>
+		<li>
+			<packageId>brrainz.harmony</packageId>
+			<displayName>Harmony</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+			<downloadUrl>https://github.com/pardeike/Harmony/releases</downloadUrl>
+		</li>
+		<li>
+			<packageId>Mehni.PickUpAndHaul</packageId>
+			<displayName>Pick Up And Haul</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/1279012058</steamWorkshopUrl>
+		</li>
+	</modDependencies>
+
+	<description>
+A smart QoL mod designed to boost the loading efficiency of transport pods and shuttles. 
+Enables multiple colonists to work together on a single loading task, planning bulk-hauling routes that significantly reduce the time and labor required for large shipments. Requires Pick Up And Haul.
+	</description>
+
+</ModMetaData>
