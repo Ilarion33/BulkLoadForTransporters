@@ -30,6 +30,10 @@ namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
             Toil waitToil = Toils_General.Wait(DepositDuration, TargetIndex.B)
                 .WithProgressBarToilDelay(TargetIndex.B, false, -0.5f);
 
+            waitToil.initAction = () => {
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"{waitToil.actor.LabelShort} is waiting ({DepositDuration} ticks) before depositing into Portal.");
+            };
+
             yield return waitToil;
 
             // Toil 2: 实际执行传送操作。
@@ -39,12 +43,21 @@ namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
                 var driver = depositToil.actor.jobs.curDriver as JobDriver_BulkLoadBase;
                 if (driver == null) return;
                 Pawn pawn = depositToil.actor;
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is executing deposit into Portal.");
                 Thing carriedThing = pawn.carryTracker.CarriedThing;
-                if (carriedThing == null) return;
+                if (carriedThing == null)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Pawn is not carrying anything.");
+                    return;
+                }
 
                 Thing jobTarget = pawn.CurJob.targetB.Thing;
                 var targetContainer = managedLoadable.GetInnerContainerFor(jobTarget);
-                if (targetContainer == null) return;
+                if (targetContainer == null)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"-> Toil FAILED: Could not get inner container for '{jobTarget?.LabelCap}'.");
+                    return;
+                }
 
                 // 与 Toil_DepositItem 保持一致，我们也考虑会话状态中的剩余需求
                 var transferables = driver._unloadTransferables;
@@ -52,6 +65,7 @@ namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
                 int needed = GetCurrentNeededAmountFor(transferables, carriedThing, remainingNeeds);
                 int amountToDeposit = Mathf.Min(carriedThing.stackCount, needed);
 
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Carried: {carriedThing.LabelCap} (x{carriedThing.stackCount}). Needed: {needed}. Will deposit: {amountToDeposit}.");
                 if (amountToDeposit > 0)
                 {
                     BulkLoad_Utility.IsExecutingManagedUnload = true;
@@ -62,12 +76,14 @@ namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
 
                         pawn.carryTracker.innerContainer.TryTransferToContainer(carriedThing, targetContainer, amountToDeposit, out _);
 
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - TransferToContainer executed for {defToLoad.defName} x{amountToDeposit}.");
                         // 使用不依赖Thing实例的API来通知管理器，完成账目结算。
                         CentralLoadManager.Instance?.Notify_ItemLoaded(pawn, managedLoadable, defToLoad, amountToDeposit);
 
                         if (remainingNeeds != null && remainingNeeds.ContainsKey(defToLoad))
                         {
                             remainingNeeds[defToLoad] -= amountToDeposit;
+                            DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Session needs updated for {defToLoad.defName}. New need: {remainingNeeds[defToLoad]}.");
                         }
                     }
                     finally

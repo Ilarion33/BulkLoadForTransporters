@@ -1,15 +1,16 @@
 ﻿// Copyright (c) 2025 Ilarion. All rights reserved.
 //
 // Core/LoadingPlanner.cs
+using BulkLoadForTransporters.Core.Interfaces;
+using BulkLoadForTransporters.Core.Utils;
 using PickUpAndHaul;
 using RimWorld;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using Verse;
 using Verse.AI;
-using BulkLoadForTransporters.Core.Interfaces;
-using BulkLoadForTransporters.Core.Utils;
 
 namespace BulkLoadForTransporters.Core
 {
@@ -68,6 +69,28 @@ namespace BulkLoadForTransporters.Core
         /// <returns>A HaulPlan object if a valid plan can be made; otherwise, null.</returns>
         public static HaulPlan TryCreateHaulPlan(Pawn pawn, ILoadable loadable, Dictionary<ThingDef, int> constraints)
         {
+            DebugLogger.LogMessage(LogCategory.Planner, () => {
+                var sb = new StringBuilder();
+
+                // 1. 尝试将 ILoadable 转换为更具体的 IManagedLoadable
+                var managedLoadable = loadable as IManagedLoadable;
+                string targetLabel = "Unknown Target";
+                string targetPos = "N/A";
+
+                // 2. 只有在转换成功时，才调用 GetParentThing
+                if (managedLoadable != null)
+                {
+                    var parentThing = managedLoadable.GetParentThing();
+                    targetLabel = parentThing?.LabelCap ?? "Null Parent";
+                    targetPos = parentThing?.Position.ToString() ?? "N/A";
+                }
+
+                sb.AppendLine($"Should a haul plan be created for {pawn.LabelShort} for '{targetLabel}' at {targetPos}?");
+                sb.AppendLine($"  - Pawn capacity: {MassUtility.Capacity(pawn):F2}kg. Free space: {MassUtility.FreeSpace(pawn):F2}kg.");
+                sb.AppendLine($"  - Target capacity: {loadable.GetMassCapacity():F2}kg. Usage: {loadable.GetMassUsage():F2}kg.");
+                return sb.ToString();
+            });
+
             if (constraints == null) constraints = new Dictionary<ThingDef, int>();
 
             #region Setup
@@ -85,6 +108,7 @@ namespace BulkLoadForTransporters.Core
                 .Select(o => new TransferableOneWay_BulkLoad(o))
                 .Cast<TransferableOneWay>()
                 .ToList();
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"  - Initial analysis: {sandboxTransferables.Count} transferable types to consider.");
 
             // 检查需求清单中是否包含了正在执行此任务的 pawn 自己。
             sandboxTransferables.RemoveAll(tr => tr.things.Contains(pawn));
@@ -102,6 +126,7 @@ namespace BulkLoadForTransporters.Core
                 float groupMassUsage = loadable.GetMassUsage();
                 finalMaxMass = Mathf.Min(pawnMaxHaulMass, groupMassCapacity - groupMassUsage);
             }
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"  - Capacity calculated. Backpack is {(backpackIsFullOrOverweight ? "full/overweight" : "not full")}. Final plan mass limit: {finalMaxMass:F2}kg.");
             #endregion
             #endregion
 
@@ -112,7 +137,11 @@ namespace BulkLoadForTransporters.Core
                                   .Where(def => def != null)
                                   .ToHashSet();
 
-            if (!allNeededDefs.Any()) return null;
+            if (!allNeededDefs.Any())
+            {
+                DebugLogger.LogMessage(LogCategory.Planner, () => "-> NO PLAN: No valid defs needed after filtering.");
+                return null;
+            }
 
             // 构建一次性的、预先过滤的供应品索引
             var supplyIndex = new Dictionary<ThingDef, List<Thing>>();
@@ -127,7 +156,7 @@ namespace BulkLoadForTransporters.Core
             // --- 2a. 高效扫描物品 (Things that are not Pawns) ---
             foreach (var thing in map.listerThings.ThingsMatching(ThingRequest.ForGroup(ThingRequestGroup.HaulableEver)))
             {
-                if (!InAllowedArea(thing.Position)) continue; 
+                if (!InAllowedArea(thing.Position)) continue;
                 // 跳过活着的Pawn，它们将在下一步被专门处理
                 if (thing is Pawn && !(thing is Corpse)) continue;
 
@@ -172,11 +201,12 @@ namespace BulkLoadForTransporters.Core
 
             if (needsBooks)
             {
+                DebugLogger.LogMessage(LogCategory.Planner, () => "  - Task requires books. Scanning bookshelves...");
                 // 只有在确实需要书的情况下，才扫描书架
                 var bookshelves = map.listerBuildings.AllBuildingsColonistOfClass<Building_Bookcase>();
                 foreach (var shelf in bookshelves)
                 {
-                    if (shelf.IsForbidden(pawn)) continue; 
+                    if (shelf.IsForbidden(pawn)) continue;
 
                     var container = shelf.GetDirectlyHeldThings();
                     if (container != null)
@@ -205,12 +235,14 @@ namespace BulkLoadForTransporters.Core
             float currentHaulMass = 0f;
 
             ProcessDemands_Optimized(pawn, sandboxTransferables, supplyIndex, shoppingBasket, ref currentHaulMass, finalMaxMass, constraints, backpackIsFullOrOverweight);
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"  - ProcessDemands complete. Shopping basket has {shoppingBasket.Count} raw entries. Final mass: {currentHaulMass:F2}kg.");
 
             // HACK: ProcessDemands_Optimized 在其循环中可能会为同一个物品源（例如，一堆钢铁）
             // 生成多个拾取条目（例如，先拿20个，再拿30个）。
             // 这会导致 JobDriver 中出现冗余的目标。这个聚合步骤将多个连续的、来自同一源的拾取计划合并为一个，例如 `(Steel x20), (Steel x30)` -> `(Steel x50)`。
             if (shoppingBasket.Any())
             {
+                var originalCount = shoppingBasket.Count;
                 var finalShoppingBasket = new List<KeyValuePair<Thing, int>>();
                 finalShoppingBasket.Add(shoppingBasket.First());
 
@@ -232,9 +264,17 @@ namespace BulkLoadForTransporters.Core
                     }
                 }
                 shoppingBasket = finalShoppingBasket;
+                if (originalCount != shoppingBasket.Count)
+                {
+                    DebugLogger.LogMessage(LogCategory.Planner, () => $"  - Shopping basket aggregated from {originalCount} to {shoppingBasket.Count} entries.");
+                }
             }
 
-            if (!shoppingBasket.Any()) return null;
+            if (!shoppingBasket.Any())
+            {
+                DebugLogger.LogMessage(LogCategory.Planner, () => "-> NO PLAN: Shopping basket is empty after processing.");
+                return null;
+            }
 
             var thingsToHaul = new List<LocalTargetInfo>();
             var countsToHaul = new List<int>();
@@ -248,7 +288,12 @@ namespace BulkLoadForTransporters.Core
                 countsToHaul.Add(item.Value);
             }
 
-            if (!thingsToHaul.Any()) return null;
+            if (!thingsToHaul.Any())
+            {
+                DebugLogger.LogMessage(LogCategory.Planner, () => "-> NO PLAN: No valid things to haul after final filtering.");
+                return null;
+            }
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"-> YES: Plan created successfully with {thingsToHaul.Count} distinct targets.");
 
             return new HaulPlan { Targets = thingsToHaul, Counts = countsToHaul };
         }
@@ -265,6 +310,8 @@ namespace BulkLoadForTransporters.Core
             Dictionary<ThingDef, int> constraints,
             bool backpackIsFullOrOverweight)
         {
+            DebugLogger.LogMessage(LogCategory.Planner, () => "--- Starting ProcessDemands_Optimized ---");
+
             var remainingStackCounts = new Dictionary<Thing, int>();
             foreach (var list in supplyIndex.Values)
                 foreach (var thing in list)
@@ -281,6 +328,7 @@ namespace BulkLoadForTransporters.Core
             var demandAnalyses = new List<DemandAnalysis>();
             var unbackpackableSourcesByDemand = new Dictionary<TransferableOneWay, List<Thing>>();
 
+            DebugLogger.LogMessage(LogCategory.Planner, () => "  - Phase 1: Pre-computing demands...");
             foreach (var demand in sandboxTransferables)
             {
                 if (demand.CountToTransfer <= 0) continue;
@@ -329,7 +377,7 @@ namespace BulkLoadForTransporters.Core
                         }
                     }
                 }
-                              
+
 
                 int allowedByManager = constraints.TryGetValue(demand.ThingDef, 0);
                 if (allowedByManager <= 0)
@@ -349,6 +397,7 @@ namespace BulkLoadForTransporters.Core
 
                 demandAnalyses.Add(analysis);
             }
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"  - Phase 1 COMPLETE. Analyzed {demandAnalyses.Count} demands.");
 
             // --- 阶段 1.5: 一次性构建主候选池 ---
             var masterBackpackCandidatePool = new List<HaulCandidate>();
@@ -361,6 +410,7 @@ namespace BulkLoadForTransporters.Core
                 foreach (var source in analysis.AlternativeSources)
                     masterBackpackCandidatePool.Add(new HaulCandidate { Analysis = analysis, Source = source });
             }
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"  - Phase 1.5 COMPLETE. Master backpack candidate pool created with {masterBackpackCandidatePool.Count} entries.");
 
             // --- 阶段二: 背包规划循环 ---
             int pathingBudgetUsed = 0;
@@ -368,6 +418,7 @@ namespace BulkLoadForTransporters.Core
 
             if (!backpackIsFullOrOverweight)
             {
+                DebugLogger.LogMessage(LogCategory.Planner, () => "  - Phase 2: Starting backpack planning loop.");
                 while (currentHaulMass < finalMaxMass)
                 {
                     // 从预构建池中进行O(C)的高效线性筛选
@@ -378,7 +429,12 @@ namespace BulkLoadForTransporters.Core
                             : c.Analysis.AlternativeNeeded > 0)
                     ).ToList();
 
-                    if (!currentlyAvailableCandidates.Any()) break;
+                    if (!currentlyAvailableCandidates.Any())
+                    {
+                        DebugLogger.LogMessage(LogCategory.Planner, () => "    - No more available candidates in the pool. Breaking backpack loop.");
+                        break;
+                    }
+                    DebugLogger.LogMessage(LogCategory.Planner, () => $"    - Found {currentlyAvailableCandidates.Count} available candidates for this iteration.");
 
                     // NOTE: 这是“理想品优先”原则的体现。
                     // 规划器会优先寻找并满足玩家在清单中明确指定的那个物品实例（例如，保质期3天食品）。
@@ -386,7 +442,12 @@ namespace BulkLoadForTransporters.Core
                     // 这是通过 FindBestChoiceFromCandidates 内部的排序和筛选实现的。
                     HaulCandidate bestChoice = FindBestChoiceFromCandidates(pawn, currentlyAvailableCandidates, pathingBudgetUsed, settings.pathfindingHeuristicCandidates, pathingOrigin);
 
-                    if (bestChoice == null) break;
+                    if (bestChoice == null)
+                    {
+                        DebugLogger.LogMessage(LogCategory.Planner, () => "    - FindBestChoiceFromCandidates returned null. Breaking backpack loop.");
+                        break;
+                    }
+                    DebugLogger.LogMessage(LogCategory.Planner, () => $"    - Best choice is: {bestChoice.Source.LabelCap} from {bestChoice.Source.Position}.");
 
                     // NOTE: 这是一个关键的性能与精度的权衡。
                     // 当 N > 1 时，这意味着我们正在使用“海选+决选”的混合模式。
@@ -399,7 +460,7 @@ namespace BulkLoadForTransporters.Core
 
                     var bestDemand = bestChoice.Analysis.OriginalDemand;
                     var bestSource = bestChoice.Source;
-                    var relevantAnalysis = bestChoice.Analysis; 
+                    var relevantAnalysis = bestChoice.Analysis;
 
                     if (relevantAnalysis == null)
                     {
@@ -418,6 +479,7 @@ namespace BulkLoadForTransporters.Core
                     // 无论需求还剩多少，如果根据质量计算，连一个都塞不进背包了，
                     // amountAffordable 就会是0，从而导致 amountToTake 为0。
                     int amountAffordable = (massPerItem > 0) ? Mathf.FloorToInt((finalMaxMass - currentHaulMass) / massPerItem) : int.MaxValue;
+                    DebugLogger.LogMessage(LogCategory.Planner, () => $"      - Needed: {needed}, Available: {remainingStackCounts[bestSource]}, Manager: {constraints.TryGetValue(bestSource.def, 0)}, Affordable by mass: {amountAffordable}.");
 
                     if (amountAffordable > 0)
                     {
@@ -429,10 +491,13 @@ namespace BulkLoadForTransporters.Core
                             amountAffordable
                         );
                     }
+                    DebugLogger.LogMessage(LogCategory.Planner, () => $"      - Final amountToTake: {amountToTake}.");
+
 
                     if (amountToTake <= 0)
                     {
                         wasBackpackFilled = true;
+                        DebugLogger.LogMessage(LogCategory.Planner, () => "    - amountToTake is 0. Setting backpack as filled and breaking loop.");
                         break;
                     }
 
@@ -454,13 +519,21 @@ namespace BulkLoadForTransporters.Core
                     if (currentHaulMass >= finalMaxMass)
                     {
                         wasBackpackFilled = true;
+                        // 在Lambda表达式中使用 ref 参数 'currentHaulMass' 的本地副本 'finalMass'
+                        float finalMass = currentHaulMass;
+                        DebugLogger.LogMessage(LogCategory.Planner, () => $"    - currentHaulMass ({finalMass:F2}) reached finalMaxMass ({finalMaxMass:F2}). Breaking loop.");
                         break;
                     }
                 }
             }
+            else
+            {
+                DebugLogger.LogMessage(LogCategory.Planner, () => "  - Phase 2: Backpack planning loop SKIPPED because backpack was already full/overweight.");
+            }
+
             // --- 阶段三: 手持规划 ---
             bool hasUnbackpackableThings = unbackpackableSourcesByDemand.Values.Any(l => l.Any(s => remainingStackCounts.ContainsKey(s) && remainingStackCounts[s] > 0));
-            
+
             // NOTE: 手持规划的触发条件
             // 1. wasBackpackFilled: 背包满了，理应拿一个在手上。
             // 2. backpackIsFullOrOverweight: 因为出发时就超重，也应该尝试拿一个。
@@ -468,9 +541,11 @@ namespace BulkLoadForTransporters.Core
             // 4. pawn.carryTracker.CarriedThing == null: 确保我们不会在小人已经拿着东西时，再给他规划一个。
             bool needsHandheldPlanning = (wasBackpackFilled || backpackIsFullOrOverweight || hasUnbackpackableThings)
                                        && pawn.carryTracker.CarriedThing == null;
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"  - Checking handheld planning conditions: wasBackpackFilled={wasBackpackFilled}, backpackIsFullOrOverweight={backpackIsFullOrOverweight}, hasUnbackpackableThings={hasUnbackpackableThings}, isHandEmpty={pawn.carryTracker.CarriedThing == null}. Result: {needsHandheldPlanning}.");
 
             if (needsHandheldPlanning)
             {
+                DebugLogger.LogMessage(LogCategory.Planner, () => "  - Phase 3: Starting handheld planning.");
                 var candidatePool = new List<HaulCandidate>();
 
                 // 1. 添加剩余的可入包物品
@@ -495,6 +570,8 @@ namespace BulkLoadForTransporters.Core
                         candidatePool.Add(new HaulCandidate { Demand = kvp.Key, Source = source });
                     }
                 }
+                DebugLogger.LogMessage(LogCategory.Planner, () => $"    - Handheld candidate pool created with {candidatePool.Count} entries.");
+
 
                 if (candidatePool.Any())
                 {
@@ -502,6 +579,7 @@ namespace BulkLoadForTransporters.Core
 
                     if (bestChoice != null)
                     {
+                        DebugLogger.LogMessage(LogCategory.Planner, () => $"    - Best handheld choice is: {bestChoice.Source.LabelCap} from {bestChoice.Source.Position}.");
                         int needed;
 
                         if (BulkLoad_Utility.IsUnbackpackable(bestChoice.Source))
@@ -522,14 +600,20 @@ namespace BulkLoadForTransporters.Core
                             needed,
                             constraints.TryGetValue(bestChoice.Source.def, 0)
                         );
+                        DebugLogger.LogMessage(LogCategory.Planner, () => $"      - Handheld needed: {needed}, Available: {remainingStackCounts[bestChoice.Source]}, Manager: {constraints.TryGetValue(bestChoice.Source.def, 0)}. Final amountToTake: {amountToTake}.");
 
                         if (amountToTake > 0)
                         {
                             shoppingBasket.Add(new KeyValuePair<Thing, int>(bestChoice.Source, amountToTake));
                         }
                     }
+                    else
+                    {
+                        DebugLogger.LogMessage(LogCategory.Planner, () => "    - FindBestChoiceFromCandidates for handheld returned null.");
+                    }
                 }
             }
+            DebugLogger.LogMessage(LogCategory.Planner, () => "--- Finished ProcessDemands_Optimized ---");
         } // <--- 方法结束
 
         // 这是一个私有辅助方法，是“混合路径规划”算法的核心。
@@ -542,6 +626,7 @@ namespace BulkLoadForTransporters.Core
             IntVec3 pathingOrigin)
         {
             if (!candidatePool.Any()) return null;
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"FindBestChoiceFromCandidates called. Pool size: {candidatePool.Count}, Budget used: {pathingBudgetUsed}, N setting: {candidateCountSetting}, Origin: {pathingOrigin}.");
 
             HaulCandidate bestChoice = null;
 
@@ -550,12 +635,14 @@ namespace BulkLoadForTransporters.Core
             // 只依赖于启发式（直线距离），以实现最快的规划速度。
             bool usePureHeuristic = candidateCountSetting <= 1;
             bool usePrecisePathing = !usePureHeuristic && (pathingBudgetUsed < candidateCountSetting);
+            DebugLogger.LogMessage(LogCategory.Planner, () => $"  - Pathing mode selected: {(usePrecisePathing ? "Precise (Budgeted)" : "Pure Heuristic")}.");
 
             if (usePrecisePathing)
             {
                 // NOTE: 这是“海选”阶段。我们先用廉价的直线距离，从所有可能的候选中，
                 // 快速筛选出 N 个最有希望的候选者，放入“决选名单”(shortlist)。
                 var shortlist = new List<HaulCandidate>(candidateCountSetting + 1);
+                DebugLogger.LogMessage(LogCategory.Planner, () => "  - Precise Mode: Starting shortlist selection (the 'audition')...");
                 foreach (var candidate in candidatePool)
                 {
                     candidate.HeuristicDistanceSq = pathingOrigin.DistanceToSquared(candidate.Source.Position);
@@ -567,21 +654,39 @@ namespace BulkLoadForTransporters.Core
                             shortlist.RemoveAt(candidateCountSetting);
                     }
                 }
+                DebugLogger.LogMessage(LogCategory.Planner, () => {
+                    var sb = new StringBuilder();
+                    sb.AppendLine($"    - Shortlist generated! Top {shortlist.Count} candidates (by heuristic distance):");
+                    foreach (var c in shortlist) sb.AppendLine($"      - {c.Source.LabelCap} at {c.Source.Position} (DistSq: {c.HeuristicDistanceSq:F0})");
+                    return sb.ToString();
+                });
 
                 // NOTE: 这是“决选”阶段。我们只对“决选名单”中的少数候选者，
                 // 调用真正消耗性能的寻路算法 (FindPathNow)，找到真正的最优解。
                 float minPathCost = float.MaxValue;
+                DebugLogger.LogMessage(LogCategory.Planner, () => "  - Precise Mode: Starting pathfinding on shortlist (the 'final round')...");
                 foreach (var candidate in shortlist)
                 {
                     using (PawnPath path = pawn.Map.pathFinder.FindPathNow(pathingOrigin, candidate.Source, pawn))
                     {
                         if (path != PawnPath.NotFound)
                         {
+                            DebugLogger.LogMessage(LogCategory.Planner, () => $"    - Path cost for '{candidate.Source.LabelCap}'? {path.TotalCost:F0}");
                             if (path.TotalCost < minPathCost)
                             {
+                                // 如果 minPathCost 仍然是初始值，就显示一个更友好的文本
+                                string previousBestCost = (minPathCost == float.MaxValue)
+                                    ? "(none yet)"
+                                    : minPathCost.ToString("F0");
+                                DebugLogger.LogMessage(LogCategory.Planner, () => $"    - New best choice found! '{candidate.Source.LabelCap}' (cost {path.TotalCost:F0}) is better than previous best (cost {previousBestCost}).");
+
                                 minPathCost = path.TotalCost;
                                 bestChoice = candidate;
                             }
+                        }
+                        else
+                        {
+                            DebugLogger.LogMessage(LogCategory.Planner, () => $"    - Path NOT found for {candidate.Source.LabelCap}.");
                         }
                     }
                 }
@@ -589,6 +694,7 @@ namespace BulkLoadForTransporters.Core
             else
             {
                 // --- 纯粹启发式 (N<=1 或 预算耗尽) ---
+                DebugLogger.LogMessage(LogCategory.Planner, () => "  - Heuristic Mode: Finding closest reachable target by straight-line distance.");
                 float minHeuristicDistSq = float.MaxValue;
                 foreach (var candidate in candidatePool)
                 {
@@ -603,6 +709,19 @@ namespace BulkLoadForTransporters.Core
                         }
                     }
                 }
+                if (bestChoice != null)
+                {
+                    DebugLogger.LogMessage(LogCategory.Planner, () => $"  - Best choice via heuristic: '{bestChoice.Source.LabelCap}' at {bestChoice.Source.Position}.");
+                }
+            }
+
+            if (bestChoice == null)
+            {
+                DebugLogger.LogMessage(LogCategory.Planner, () => "-> FindBestChoiceFromCandidates finished with NO valid choice.");
+            }
+            else
+            {
+                DebugLogger.LogMessage(LogCategory.Planner, () => $"-> FindBestChoiceFromCandidates finished. Final choice: '{bestChoice.Source.LabelCap}'.");
             }
             return bestChoice;
         }

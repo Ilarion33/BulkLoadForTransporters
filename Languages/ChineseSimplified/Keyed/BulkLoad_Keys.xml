@@ -23,6 +23,18 @@
 
   <!-- ==================== Mod Settings ==================== -->
 
+  <BulkLoadForTransporters.Settings.Header.Debug>调试设置（仅开发者模式）</BulkLoadForTransporters.Settings.Header.Debug>
+  <BulkLoadForTransporters.Settings.Header.Debug.Tooltip>调试日志选项。详细选项仅在开发者模式下可见并生效。\n\n建议不要同时打开多个日志选项，否则日志输出量巨大，可能会导致游戏卡顿。</BulkLoadForTransporters.Settings.Header.Debug.Tooltip>
+
+  <BulkLoadForTransporters.Settings.Debug.LogWorkGiver>工作分配器(WorkGiver)日志</BulkLoadForTransporters.Settings.Debug.LogWorkGiver>
+  <BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>如果遇到以下问题，请开启此项：\n殖民者在您预期的时机“没有”开始批量任务，或者在“不该”开始任务时开始了任务。此日志追踪“我应不应该工作？”的决策过程。</BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogPlanner>规划器(Planner)日志</BulkLoadForTransporters.Settings.Debug.LogPlanner>
+  <BulkLoadForTransporters.Settings.Debug.LogPlanner.Tooltip>如果遇到以下问题，请开启此项：\n批量任务已开始，但小人出现无限“等待中”、没有拾取预期的物品、拾取了错误的数量，或者寻路效率看起来很低。此日志追踪“我应该拾取什么？按什么顺序？”的拾取路径规划过程。</BulkLoadForTransporters.Settings.Debug.LogPlanner.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogToils>具体行为(Toils)日志</BulkLoadForTransporters.Settings.Debug.LogToils>
+  <BulkLoadForTransporters.Settings.Debug.LogToils.Tooltip>如果遇到以下问题，请开启此项：\n小人前往拾取物品失败、卸货过程失败，或者物品没有被正确处理（例如，没有被正确地放入背包/手上）。此日志一步步地追踪“我正在具体如何执行这项工作？”的过程。</BulkLoadForTransporters.Settings.Debug.LogToils.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogManager>管理器(Manager)日志</BulkLoadForTransporters.Settings.Debug.LogManager>
+  <BulkLoadForTransporters.Settings.Debug.LogManager.Tooltip>如果遇到以下问题，请开启此项：\n多个殖民者尝试搬运同一个物品、发现有特定的物品没人去搬，或者装载进度计算不正确。此日志追踪“谁认领了什么？”的并发状态。</BulkLoadForTransporters.Settings.Debug.LogManager.Tooltip>
+
   <BulkLoadForTransporters.Settings.Header.BulkLoad>启用批量装载运输工具</BulkLoadForTransporters.Settings.Header.BulkLoad>
   <BulkLoadForTransporters.Settings.Header.BulkLoad.Tooltip>核心功能的相关设置：批量装载运输仓、穿梭机等。</BulkLoadForTransporters.Settings.Header.BulkLoad.Tooltip>
   <BulkLoadForTransporters.Settings.Header.BulkLoadPortal>启用批量装载传送门</BulkLoadForTransporters.Settings.Header.BulkLoadPortal>
@@ -31,7 +43,6 @@
   <BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>附加功能的相关设置：批量卸载驮兽和其他运输单位。</BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>
   <BulkLoadForTransporters.Settings.Header.General>通用设置</BulkLoadForTransporters.Settings.Header.General>
 
-  
   <BulkLoadForTransporters.Settings.AiUpdateFrequency>更新频率 (Ticks): {0}</BulkLoadForTransporters.Settings.AiUpdateFrequency>
   <BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>较低的值意味着殖民者响应更快，但可能消耗更多性能。较高的值可以提升性能。\n默认值: 60 (1秒)。</BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>
 

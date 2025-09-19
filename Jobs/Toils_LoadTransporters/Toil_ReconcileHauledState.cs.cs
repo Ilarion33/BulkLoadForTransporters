@@ -2,6 +2,7 @@
 //
 // Jobs/Toils_LoadTransporters/Toil_ReconcileHauledState.cs
 using BulkLoadForTransporters.Core.Interfaces;
+using BulkLoadForTransporters.Core.Utils;
 using System.Linq;
 using Verse;
 using Verse.AI;
@@ -26,6 +27,7 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
             {
                 var pawn = toil.actor;
                 var hauledThings = haulState.HauledThings;
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is reconciling physical state with logical state ({hauledThings.Count} items to check).");
 
                 // NOTE: 必须创建一个列表副本进行遍历，因为我们将在循环中修改原始列表。
                 var itemsToCheck = hauledThings.ToList();
@@ -36,10 +38,12 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                     if (thing == null || thing.Destroyed ||
                         (!pawn.inventory.innerContainer.Contains(thing) && pawn.carryTracker.CarriedThing != thing))
                     {
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Found ghost item: '{thing?.LabelCap ?? "null"}'. It is no longer on the pawn. Removing from HauledThings list.");
                         // 从逻辑账本中移除这个“幽灵”，以防止后续卸货逻辑出错。
                         haulState.RemoveHauledThing(thing);
                     }
                 }
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Reconciliation complete. HauledThings now has {hauledThings.Count} items.");
             };
             toil.defaultCompleteMode = ToilCompleteMode.Instant;
             return toil;

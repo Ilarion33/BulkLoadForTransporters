@@ -22,6 +22,18 @@
 
   <!-- ==================== Mod Settings ==================== -->
 
+  <BulkLoadForTransporters.Settings.Header.Debug>Debug Settings (Developer Mode Only)</BulkLoadForTransporters.Settings.Header.Debug>
+  <BulkLoadForTransporters.Settings.Header.Debug.Tooltip>Debugging log options. Detailed options are only visible and effective in Developer Mode.\n\nIt is not recommended to enable multiple log options simultaneously, as the massive amount of output may cause performance issues.</BulkLoadForTransporters.Settings.Header.Debug.Tooltip>  
+  
+  <BulkLoadForTransporters.Settings.Debug.LogWorkGiver>Log WorkGiver</BulkLoadForTransporters.Settings.Debug.LogWorkGiver>
+  <BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>Enable this if colonists are NOT starting bulk jobs when you expect, or ARE starting them when they shouldn't. This log tracks the "Should I work?" decision process.</BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogPlanner>Log Planner</BulkLoadForTransporters.Settings.Debug.LogPlanner>
+  <BulkLoadForTransporters.Settings.Debug.LogPlanner.Tooltip>Enable this if a bulk job has started, but the pawn gets stuck "waiting", doesn't pick up the expected items, picks up the wrong amount, or pathing seems inefficient. This log tracks the "What should I pick up, and in what order?" planning process.</BulkLoadForTransporters.Settings.Debug.LogPlanner.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogToils>Log Toils</BulkLoadForTransporters.Settings.Debug.LogToils>
+  <BulkLoadForTransporters.Settings.Debug.LogToils.Tooltip>Enable this if a pawn fails to go to an item, the unloading process fails, or an item is not handled correctly (e.g., not properly placed in inventory/hands). This log tracks the "How am I physically executing this job, step-by-step?" process.</BulkLoadForTransporters.Settings.Debug.LogToils.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogManager>Log Manager</BulkLoadForTransporters.Settings.Debug.LogManager>
+  <BulkLoadForTransporters.Settings.Debug.LogManager.Tooltip>Enable this if multiple colonists are trying to haul the same item, specific items are being ignored, or the loading progress is calculated incorrectly. This log tracks the "Who has claimed what?" concurrency state.</BulkLoadForTransporters.Settings.Debug.LogManager.Tooltip>
+
   <BulkLoadForTransporters.Settings.Header.BulkLoad>Enable Bulk Load Transporters</BulkLoadForTransporters.Settings.Header.BulkLoad>
   <BulkLoadForTransporters.Settings.Header.BulkLoad.Tooltip>Settings for the core feature: loading transport pods, shuttles, etc., in bulk.</BulkLoadForTransporters.Settings.Header.BulkLoad.Tooltip>
   <BulkLoadForTransporters.Settings.Header.BulkLoadPortal>Enable Bulk Load Portals</BulkLoadForTransporters.Settings.Header.BulkLoadPortal>
@@ -29,7 +41,6 @@
   <BulkLoadForTransporters.Settings.Header.BulkUnload>Enable Bulk Unload Carriers</BulkLoadForTransporters.Settings.Header.BulkUnload>
   <BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>Settings for the additional feature: unloading pack animals and other carriers in bulk.</BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>
   <BulkLoadForTransporters.Settings.Header.General>General Settings</BulkLoadForTransporters.Settings.Header.General>
-  
   
   <BulkLoadForTransporters.Settings.AiUpdateFrequency>Update Frequency (Ticks): {0}</BulkLoadForTransporters.Settings.AiUpdateFrequency>
   <BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>Lower values mean faster colonists' reaction but may cost more performance. Higher values improve performance.\nDefault: 60 (1 second).</BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>

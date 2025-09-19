@@ -2,9 +2,10 @@
 //
 // Jobs/Toils_LoadTransporters/Toil_TakeToCarry.cs
 using BulkLoadForTransporters.Core.Interfaces;
+using BulkLoadForTransporters.Core.Utils;
+using UnityEngine; // For Mathf
 using Verse;
 using Verse.AI;
-using UnityEngine; // For Mathf
 
 namespace BulkLoadForTransporters.Toils_LoadTransporters
 {
@@ -27,9 +28,11 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 Pawn actor = toil.actor;
                 Job curJob = actor.CurJob;
                 Thing thingToPickUp = curJob.GetTarget(index).Thing;
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"{actor.LabelShort} is taking {thingToPickUp?.LabelCap} to CARRY.");
 
                 if (thingToPickUp == null || thingToPickUp.Destroyed)
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil FAILED: Thing to pick up is null or destroyed.");
                     actor.jobs.EndCurrentJob(JobCondition.Incompletable, true);
                     return;
                 }
@@ -37,12 +40,18 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 // 从Job的count字段中读取规划好的拾取数量。
                 int plannedCount = curJob.count;
                 int countToPickUp = Mathf.Min(plannedCount, thingToPickUp.stackCount);
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Planned: {plannedCount}, On ground: {thingToPickUp.stackCount}. Will take: {countToPickUp}.");
 
-                if (countToPickUp <= 0) return;
+                if (countToPickUp <= 0)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Calculated count to pick up is zero.");
+                    return;
+                }
 
                 // NOTE: 在释放预定前，先检查我们是否真的拥有它。
                 if (actor.Map.reservationManager.ReservedBy(thingToPickUp, actor, curJob))
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Releasing reservation on {thingToPickUp.LabelCap}.");
                     actor.Map.reservationManager.Release(thingToPickUp, actor, curJob);
                 }
 
@@ -52,9 +61,11 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 if (actor.carryTracker.TryStartCarry(itemToCarry))
                 {
                     haulState.AddHauledThing(actor.carryTracker.CarriedThing);
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Successfully carried {actor.carryTracker.CarriedThing.LabelCap}. HauledThings count: {haulState.HauledThings.Count}.");
                 }
                 else
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - TryStartCarry FAILED for {itemToCarry.LabelCap}. Dropping on ground.");
                     Log.Error($"[BulkLoad] Failed to carry {itemToCarry.LabelCap}. Placing back on ground.");
                     GenPlace.TryPlaceThing(itemToCarry, actor.Position, actor.Map, ThingPlaceMode.Near);
                 }

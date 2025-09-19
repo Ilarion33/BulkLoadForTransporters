@@ -23,6 +23,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
             // 只有在用户于设置中启用了此选项时才运行。
             if (LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Settings>().cleanupOnSave)
             {
+                DebugLogger.LogMessage(LogCategory.Manager, () => "ScribeSaver_InitSaving_Patch triggered. Running pre-save cleanup...");
                 SafeUnloadManager.CleanupBeforeSaving();
             }
         }

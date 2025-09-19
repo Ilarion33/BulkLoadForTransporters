@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2025 Ilarion. All rights reserved.
 //
 // Jobs/Toils_LoadTransporters/Toil_ReleaseReservation.cs
+using BulkLoadForTransporters.Core.Utils;
 using Verse;
 using Verse.AI;
 
@@ -26,8 +27,13 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
 
                 if (targetToRelease.IsValid)
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is releasing reservation on {targetToRelease.ToString()}.");
                     // 调用游戏引擎的标准方法来安全地释放预定。
                     pawn.Map.reservationManager.Release(targetToRelease, pawn, job);
+                }
+                else
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} tried to release reservation, but target at index {index} is invalid.");
                 }
             };
             toil.defaultCompleteMode = ToilCompleteMode.Instant;

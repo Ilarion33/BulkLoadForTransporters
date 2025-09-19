@@ -35,6 +35,12 @@ namespace BulkLoadForTransporters.Core
         public bool autoOpenCarrierGear = true;
 
 
+        public bool logPlanner = false;
+        public bool logWorkGiver = false;
+        public bool logToils = false;
+        public bool logManager = false;
+
+
         /// <summary>
         /// Handles saving and loading the settings to/from the mod's configuration file.
         /// </summary>
@@ -52,6 +58,11 @@ namespace BulkLoadForTransporters.Core
             Scribe_Values.Look(ref AiUpdateFrequency, "AiUpdateFrequency", 60);
             Scribe_Values.Look(ref visualUnloadDelay, "visualUnloadDelay", 15);
             Scribe_Values.Look(ref cleanupOnSave, "cleanupOnSave", true);
+
+            Scribe_Values.Look(ref logPlanner, "logPlanner", false);
+            Scribe_Values.Look(ref logWorkGiver, "logWorkGiver", false);
+            Scribe_Values.Look(ref logToils, "logToils", false);
+            Scribe_Values.Look(ref logManager, "logManager", false);
 
 
             // --- Bulk Loading ---

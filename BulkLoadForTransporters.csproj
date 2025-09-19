@@ -79,6 +79,7 @@
     <Compile Include="Core\Interfaces\ILoadable.cs" />
     <Compile Include="Core\Main.cs" />
     <Compile Include="Core\Adapters\LoadTransportersAdapter.cs" />
+    <Compile Include="Core\Utils\DebugLogger.cs" />
     <Compile Include="Core\Utils\SafeUnloadManager.cs" />
     <Compile Include="Core\Utils\LoadTransporters_WorkGiverUtility.cs" />
     <Compile Include="HarmonyPatches\LoadPortal\EnterPortalUtility_ThingsBeingHauledTo_Patch.cs" />

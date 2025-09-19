@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2025 Ilarion. All rights reserved.
 //
 // Jobs/JobDriver_BulkLoadBase.cs
+using BulkLoadForTransporters.Core;
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
 using RimWorld;
@@ -119,7 +120,22 @@ namespace BulkLoadForTransporters.Jobs
         /// This must be implemented by the concrete subclass.
         /// </summary>
         public override abstract string GetReport();
-        
+
+        public override bool IsContinuation(Job newJob)
+        {
+            // 检查当前 Job 和新 Job 是否都是我们系统内的 Job
+            bool isCurrentJobManaged = JobDefRegistry.IsLoadingJob(this.job.def) || JobDefRegistry.IsUnloadingJob(this.job.def);
+            bool isNewJobManaged = newJob != null && (JobDefRegistry.IsLoadingJob(newJob.def) || JobDefRegistry.IsUnloadingJob(newJob.def));
+
+            if (isCurrentJobManaged && isNewJobManaged)
+            {
+                // 如果它们的目标 (运输仓组或传送门) 是同一个，就视为连续
+                return this.job.targetB == newJob.targetB;
+            }
+
+            return base.IsContinuation(newJob);
+        }
+
         /// <summary>
         /// The main method where the sequence of Toils for the job is defined.
         /// This must be implemented by the concrete subclass.

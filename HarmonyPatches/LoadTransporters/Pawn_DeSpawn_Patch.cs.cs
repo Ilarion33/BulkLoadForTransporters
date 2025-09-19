@@ -2,6 +2,7 @@
 //
 // HarmonyPatches/LoadTransporters/Pawn_DeSpawn_Patch.cs
 using BulkLoadForTransporters.Core;
+using BulkLoadForTransporters.Core.Utils;
 using HarmonyLib;
 using Verse;
 
@@ -23,6 +24,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
         {
             if (__instance.RaceProps.Humanlike || __instance.RaceProps.IsMechanoid)
             {
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"Pawn_DeSpawn_Patch triggered for {__instance.LabelShort}. Releasing claims...");
                 CentralLoadManager.Instance?.ReleaseClaimsForPawn(__instance);
             }
         }

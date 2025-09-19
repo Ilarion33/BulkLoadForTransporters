@@ -3,6 +3,7 @@
 // Jobs/Toils_LoadTransporters/Toil_GotoHaulable.cs
 using BulkLoadForTransporters.Core;
 using BulkLoadForTransporters.Core.Interfaces;
+using BulkLoadForTransporters.Core.Utils;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -32,10 +33,12 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
             {
                 var pawn = toil.actor;
                 var thing = pawn.CurJob.GetTarget(index).Thing;
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is executing GotoHaulable for '{thing?.LabelCap}'.");
 
                 // 基础有效性检查
                 if (thing == null || thing.Destroyed || thing.IsForbidden(pawn))
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"-> Toil JUMPING: Target is null, destroyed, or forbidden.");
                     pawn.jobs.curDriver.JumpToToil(jumpTarget);
                     return;
                 }
@@ -45,9 +48,11 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 if (thing.Spawned)
                 {
                     destination = thing;
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Target is spawned. Destination set to the thing itself.");
                     // 只有在物品真的在地图上时，我们才能检查预定状态。
                     if (!pawn.CanReserve(thing))
                     {
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"-> Toil JUMPING: Cannot reserve spawned target.");
                         pawn.jobs.curDriver.JumpToToil(jumpTarget);
                         return;
                     }
@@ -56,9 +61,11 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 {
                     // 如果物品在容器里，目标就是那个容器。
                     destination = container;
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Target is in container '{container.LabelCap}'. Destination set to container.");
                 }
                 else
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"-> Toil JUMPING: Target is not spawned and not in a valid container. Parent: {thing.ParentHolder?.ToString()}.");
                     // 既不在地上也不在Thing容器里，视为无效目标
                     pawn.jobs.curDriver.JumpToToil(jumpTarget);
                     return;
@@ -68,6 +75,7 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 pawn.pather.StartPath(destination, PathEndMode.ClosestTouch);
                 ticksUntilNextCheck = LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Core.Settings>().AiUpdateFrequency;
                 needsToEnd = false;
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Pathing started towards {destination}.");
             };
 
             toil.tickAction = () =>
@@ -78,9 +86,10 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 if (ticksUntilNextCheck <= 0)
                 {
                     Thing thing = toil.actor.CurJob.GetTarget(index).Thing;
-                    if (thing == null || Toil_TakeToInventory.GetCurrentNeededAmountFor(loadable, thing.def, haulState) <= 0)
+                    int neededAmount = (thing != null) ? Toil_TakeToInventory.GetCurrentNeededAmountFor(loadable, thing.def, haulState) : 0;
+                    if (thing == null || neededAmount <= 0)
                     {
-                        needsToEnd = true;
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Tick check: Target '{thing?.LabelCap}' is no longer needed (needed: {neededAmount}). Ending this goto.");
                     }
                     ticksUntilNextCheck = LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Core.Settings>().AiUpdateFrequency;
                 }

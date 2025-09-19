@@ -2,6 +2,7 @@
 //
 // Jobs/Toils_LoadTransporters/Toil_TakeToInventory.cs
 using BulkLoadForTransporters.Core.Interfaces;
+using BulkLoadForTransporters.Core.Utils;
 using RimWorld;
 using System.Linq;
 using UnityEngine;
@@ -29,12 +30,18 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
             {
                 Pawn actor = toil.actor;
                 Job curJob = actor.CurJob;
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"{actor.LabelShort} is executing TakeToInventory.");
                 Thing thingToPickUp = curJob.GetTarget(index).Thing;
-                if (thingToPickUp == null || thingToPickUp.Destroyed) return;
+                if (thingToPickUp == null || thingToPickUp.Destroyed)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Target thing is null or destroyed.");
+                    return;
+                }
 
                 // 在释放预定之前，先检查我们是否真的拥有它。
                 if (actor.Map.reservationManager.ReservedBy(thingToPickUp, actor, curJob))
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Reservation released for {thingToPickUp.LabelCap}.");
                     actor.Map.reservationManager.Release(thingToPickUp, actor, curJob);
                 }
 
@@ -43,6 +50,7 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 int plannedCount = curJob.count;
                 // 最终拾取量是“规划量”、“物品堆叠量”和“净需求量”三者中的最小值。
                 int countToPickUp = Mathf.Min(plannedCount, thingToPickUp.stackCount, stillNeededFromMap);
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Calculation: Planned={plannedCount}, OnGround={thingToPickUp.stackCount}, StillNeeded={stillNeededFromMap} -> Initial countToPickUp={countToPickUp}.");
 
                 // 进行最终的物理负重检查。
                 float massPerItem = thingToPickUp.GetStatValue(StatDefOf.Mass);
@@ -51,21 +59,30 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                     float availableMass = MassUtility.FreeSpace(actor);
                     int amountAffordableByMass = (availableMass > 0) ? Mathf.FloorToInt(availableMass / massPerItem) : 0;
                     countToPickUp = Mathf.Min(countToPickUp, amountAffordableByMass);
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Mass Check: AvailableMass={availableMass:F2}kg, AffordableCount={amountAffordableByMass} -> Final countToPickUp={countToPickUp}.");
                 }
-                if (countToPickUp <= 0) return;
+                if (countToPickUp <= 0)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Final countToPickUp is 0.");
+                    return;
+                }
+
 
                 Thing splitThing = thingToPickUp.SplitOff(countToPickUp);
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - SplitOff {countToPickUp} of {thingToPickUp.def.defName}.");
 
                 // 尝试与背包中已有的同类物品合并。
                 Thing targetStack = haulState.HauledThings.FirstOrDefault(t => t.CanStackWith(splitThing));
                 if (targetStack != null)
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Found existing stack in haulState. Merging {splitThing.LabelCap} into {targetStack.LabelCap}.");
                     targetStack.TryAbsorbStack(splitThing, true);
                     if (!splitThing.Destroyed)
                     {
                         if (actor.inventory.GetDirectlyHeldThings().TryAdd(splitThing, false))
                         {
                             haulState.AddHauledThing(splitThing);
+                            DebugLogger.LogMessage(LogCategory.Toils, () => $"    - Merge overflow successful. Added new stack {splitThing.LabelCap} to inventory and haulState.");
                         }
                         else
                         {
@@ -73,13 +90,19 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                             GenPlace.TryPlaceThing(splitThing, thingToPickUp.Position, actor.Map, ThingPlaceMode.Near);
                         }
                     }
+                    else
+                    {
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Merge successful. Original stack count is now {targetStack.stackCount}.");
+                    }
                 }
                 else
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - No existing stack found. Adding {splitThing.LabelCap} as a new entry.");
                     // 如果没有可合并的，就作为新堆叠添加入背包。
                     if (actor.inventory.GetDirectlyHeldThings().TryAdd(splitThing, false))
                     {
                         haulState.AddHauledThing(splitThing);
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Added new stack {splitThing.LabelCap} to inventory and haulState.");
                     }
                     else
                     {

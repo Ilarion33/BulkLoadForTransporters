@@ -2,6 +2,7 @@
 //
 // Core/CentralLoadManager.cs
 using BulkLoadForTransporters.Core.Interfaces;
+using BulkLoadForTransporters.Core.Utils;
 using RimWorld;
 using System.Collections.Generic;
 using System.Linq;
@@ -152,8 +153,8 @@ namespace BulkLoadForTransporters.Core
         {
             if (allTasks != null && allTasks.ContainsKey(map))
             {
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"Map {map.uniqueID} is being removed. Cleaning up all associated tasks.");
                 allTasks.Remove(map);
-                Log.Message($"[BulkLoad] CentralLoadManager cleaned up data for removed map: {map.uniqueID}");
             }
         }
 
@@ -166,6 +167,7 @@ namespace BulkLoadForTransporters.Core
         {
             var taskState = GetOrCreateTaskState(task);
             if (taskState == null) return;
+            DebugLogger.LogMessage(LogCategory.Manager, () => $"RegisterOrUpdateTask called for task ID {task.GetUniqueLoadID()} on map {task.GetMap()?.uniqueID}.");
             taskState.UpdateTotalNeeded(task.GetTransferables());
         }
 
@@ -179,7 +181,9 @@ namespace BulkLoadForTransporters.Core
         {
             var taskState = GetTaskState(task);
             if (taskState == null) return new Dictionary<ThingDef, int>(); // 返回空字典，安全
-            return taskState.GetAvailableToClaim();
+            var available = taskState.GetAvailableToClaim();
+            DebugLogger.LogMessage(LogCategory.Manager, () => $"GetAvailableToClaim for task ID {task.GetUniqueLoadID()}: Returning {available.Count} defs. Example: {string.Join(", ", available.Take(3).Select(kvp => $"{kvp.Key.defName}x{kvp.Value}"))}");
+            return available;
         }
 
         /// <summary>
@@ -214,7 +218,11 @@ namespace BulkLoadForTransporters.Core
                 if (plan.ContainsKey(thingDef)) plan[thingDef] += count;
                 else plan.Add(thingDef, count);
             }
-            if (plan.Any()) taskState.AddClaim(pawn, plan);
+            if (plan.Any())
+            {
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"{pawn.LabelShort} is CLAIMING items for task {loadable.GetUniqueLoadID()}. Plan: {string.Join(", ", plan.Select(kvp => $"{kvp.Key.defName}x{kvp.Value}"))}");
+                taskState.AddClaim(pawn, plan);
+            }
         }
 
         /// <summary>
@@ -228,6 +236,7 @@ namespace BulkLoadForTransporters.Core
         {
             var taskState = GetTaskState(task);
             if (taskState == null || depositedThing == null || depositedThing.Destroyed) return;
+            DebugLogger.LogMessage(LogCategory.Manager, () => $"{pawn.LabelShort} NOTIFIED loading of {depositedThing.LabelCap} (x{depositedThing.stackCount}) for task {task.GetUniqueLoadID()}.");
             taskState.SettleTransaction(pawn, depositedThing.def, depositedThing.stackCount);
         }
 
@@ -247,6 +256,7 @@ namespace BulkLoadForTransporters.Core
                 Log.Error($"[BulkLoad] CentralLoadManager.Notify_ItemLoaded failed: Could not find a task state for the provided loadable.");
                 return;
             }
+            DebugLogger.LogMessage(LogCategory.Manager, () => $"{pawn.LabelShort} NOTIFIED loading of {def.defName} (x{count}) for task {task.GetUniqueLoadID()} (Thing-less version).");
             taskState.SettleTransaction(pawn, def, count);
         }
 
@@ -258,11 +268,16 @@ namespace BulkLoadForTransporters.Core
         /// <param name="pawn">The pawn whose claims should be released.</param>
         public void ReleaseClaimsForPawn(Pawn pawn)
         {
+            DebugLogger.LogMessage(LogCategory.Manager, () => $"ReleaseClaimsForPawn triggered for {pawn.LabelShort} on map {pawn.Map?.uniqueID}.");
             // 1. 基础验证
             if (pawn == null || pawn.Map == null || allTasks == null) return;
 
             // 2. 验证地图任务字典是否存在
-            if (!allTasks.TryGetValue(pawn.Map, out var mapTasksWrapper) || mapTasksWrapper == null) return;
+            if (!allTasks.TryGetValue(pawn.Map, out var mapTasksWrapper) || mapTasksWrapper == null)
+            {
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"-> No tasks found on map {pawn.Map.uniqueID}. Nothing to release.");
+                return;
+            }
 
             // 3. [核心修复] 验证 mapTasksWrapper 内部的字典是否已初始化
             if (mapTasksWrapper.dict == null) return;
@@ -357,6 +372,7 @@ namespace BulkLoadForTransporters.Core
             /// </summary>
             public void UpdateTotalNeeded(List<TransferableOneWay> transferables)
             {
+                var oldNeededCount = totalNeeded.Count;
                 totalNeeded.Clear();
                 if (transferables == null) return;
                 foreach (var tr in transferables)
@@ -369,6 +385,7 @@ namespace BulkLoadForTransporters.Core
                         else totalNeeded.Add(tr.ThingDef, tr.CountToTransfer);
                     }
                 }
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"  - Task state updated. Total needed defs changed from {oldNeededCount} to {totalNeeded.Count}. Example: {string.Join(", ", totalNeeded.Take(3).Select(kvp => $"{kvp.Key.defName}x{kvp.Value}"))}");
             }
 
             /// <summary>
@@ -388,6 +405,7 @@ namespace BulkLoadForTransporters.Core
                     if (totalClaimed.ContainsKey(kvp.Key)) totalClaimed[kvp.Key] += kvp.Value;
                     else totalClaimed[kvp.Key] = kvp.Value;
                 }
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"  - Claim recorded. Total claimed for {plan.First().Key.defName} is now {totalClaimed.TryGetValue(plan.First().Key, 0)}.");
             }
 
             /// <summary>
@@ -395,6 +413,9 @@ namespace BulkLoadForTransporters.Core
             /// </summary>
             public void SettleTransaction(Pawn pawn, ThingDef def, int depositedCount)
             {
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"  - Settling transaction for {pawn.LabelShort}: {def.defName} x{depositedCount}.");
+                int oldTotalClaimed = totalClaimed.TryGetValue(def, 0);
+
                 pawnClaims.TryGetValue(pawn, out var claims);
                 int currentPawnClaim = (claims != null && claims.ContainsKey(def)) ? claims[def] : 0;
                 int delta = depositedCount - currentPawnClaim;
@@ -408,6 +429,7 @@ namespace BulkLoadForTransporters.Core
                     totalClaimed[def] = System.Math.Max(0, totalClaimed[def] - depositedCount);
                     if (totalClaimed[def] == 0) totalClaimed.Remove(def);
                 }
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"    - Total claimed for {def.defName} changed from {oldTotalClaimed} to {totalClaimed.TryGetValue(def, 0)}.");
                 if (claims != null)
                 {
                     if (claims.ContainsKey(def))
@@ -415,7 +437,11 @@ namespace BulkLoadForTransporters.Core
                         claims[def] = System.Math.Max(0, claims[def] - depositedCount);
                         if (claims[def] == 0) claims.Remove(def);
                     }
-                    if (!claims.Any()) pawnClaims.Remove(pawn);
+                    if (!claims.Any())
+                    {
+                        pawnClaims.Remove(pawn);
+                        DebugLogger.LogMessage(LogCategory.Manager, () => $"    - All claims for {pawn.LabelShort} settled. Pawn removed from claims list.");
+                    }
                 }
             }
 
@@ -424,18 +450,21 @@ namespace BulkLoadForTransporters.Core
             /// </summary>
             public void ReleasePawn(Pawn pawn)
             {
-                if (pawnClaims == null) return; // <-- 新增
+                if (pawnClaims == null) return;
                 if (pawnClaims.TryGetValue(pawn, out var claimsToRelease) && claimsToRelease != null)
                 {
-                    if (totalClaimed != null) // <-- 新增
+                    DebugLogger.LogMessage(LogCategory.Manager, () => $"  - Releasing {claimsToRelease.Count} claim types for {pawn.LabelShort}.");
+                    if (totalClaimed != null)
                     {
                         foreach (var kvp in claimsToRelease)
                         {
+                            int oldTotalClaimed = totalClaimed.TryGetValue(kvp.Key, 0);
                             if (totalClaimed.ContainsKey(kvp.Key))
                             {
                                 totalClaimed[kvp.Key] -= kvp.Value;
                                 if (totalClaimed[kvp.Key] <= 0) totalClaimed.Remove(kvp.Key);
                             }
+                            DebugLogger.LogMessage(LogCategory.Manager, () => $"    - Releasing {kvp.Key.defName} x{kvp.Value}. Total claimed changed from {oldTotalClaimed} to {totalClaimed.TryGetValue(kvp.Key, 0)}.");
                         }
                     }
                     pawnClaims.Remove(pawn);

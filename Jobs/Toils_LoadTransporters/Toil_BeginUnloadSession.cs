@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2025 Ilarion. All rights reserved.
 //
 // Jobs/Toils_LoadTransporters/Toil_BeginUnloadSession.cs
+using BulkLoadForTransporters.Core.Utils;
 using BulkLoadForTransporters.Jobs;
 using RimWorld;
 using System.Collections.Generic;
@@ -28,16 +29,24 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
             {
                 var driver = toil.actor.jobs.curDriver as JobDriver_LoadTransportersInBulk;
                 if (driver == null) return;
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"{toil.actor.LabelShort} is beginning unload session for Transporter.");
+
 
                 var jobTarget = driver.job.targetB.Thing;
                 var currentTransporter = jobTarget?.TryGetComp<CompTransporter>();
-                if (currentTransporter == null) return;
+                if (currentTransporter == null)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"-> Toil FAILED: Target '{jobTarget?.LabelCap}' has no CompTransporter.");
+                    return;
+                }
 
                 // 获取目标“个体”的待办清单，缩小后续检查的视野。
                 driver._unloadTransferables = currentTransporter.leftToLoad;
                 driver._unloadRemainingNeeds = new Dictionary<ThingDef, int>();
                 if (driver._unloadTransferables != null)
                 {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Caching {driver._unloadTransferables.Count} transferables from Transporter.");
+
                     // 将待办清单处理成一个易于查询的字典，用于快速计算剩余需求。
                     foreach (var tr in driver._unloadTransferables.Where(t => t.CountToTransfer > 0 && t.HasAnyThing))
                     {
@@ -49,6 +58,7 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 }
                 // 清空上一趟可能产生的剩余物列表，为新的卸货循环做准备。
                 driver.SurplusThings.Clear();
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Session initialized. {driver._unloadRemainingNeeds.Count} defs with needs cached. Surplus cleared.");
             };
             toil.defaultCompleteMode = ToilCompleteMode.Instant;
             return toil;

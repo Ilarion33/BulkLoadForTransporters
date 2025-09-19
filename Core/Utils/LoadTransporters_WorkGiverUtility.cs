@@ -27,30 +27,61 @@ namespace BulkLoadForTransporters.Core.Utils
         /// <returns>True if there is a possibility of work, otherwise false.</returns>
         public static bool HasPotentialBulkWork(Pawn pawn, IManagedLoadable groupLoadable)
         {
-            if (pawn.RaceProps.IsMechanoid && !PickUpAndHaul.Settings.AllowMechanoids) return false;
-            if (CentralLoadManager.Instance == null) return false;
+            var parentThingForLog = groupLoadable.GetParentThing();
+            DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"Does {pawn.LabelShort} have any potential bulk work for '{parentThingForLog?.LabelCap}' at {parentThingForLog?.Position}?");
+            if (!groupLoadable.GetTransferables().Any())
+            {
+                return false;
+            }
 
-            CentralLoadManager.Instance.RegisterOrUpdateTask(groupLoadable);
+            if (pawn.RaceProps.IsMechanoid && !PickUpAndHaul.Settings.AllowMechanoids)
+            {
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO: Pawn is a mechanoid and PUAH settings disallow it.");
+                return false;
+            }
+
+            if (CentralLoadManager.Instance == null)
+            {
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO: CentralLoadManager is not available.");
+                return false;
+            }
+
 
             var parentThing = groupLoadable.GetParentThing();
-            if (parentThing == null) return false;
+            if (parentThing == null)
+            {
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO: Loadable's parent thing is null.");
+                return false;
+            }
 
 
             // 机会主义卸货是最高优先级的工作类型。
             if (BulkLoad_Utility.TryCreateUnloadFirstJob(pawn, groupLoadable, out _))
             {
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> YES: Opportunistic unload job can be created.");
                 return true;
             }
 
+            CentralLoadManager.Instance.RegisterOrUpdateTask(groupLoadable);
+
             if (!CentralLoadManager.Instance.HasWork(groupLoadable))
             {
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO: CentralLoadManager reports no available items to claim for this task.");
                 return false;
             }
 
-            if (!pawn.CanReach(parentThing, PathEndMode.Touch, Danger.Deadly)) return false;
+            if (!pawn.CanReach(parentThing, PathEndMode.Touch, Danger.Deadly))
+            {
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"-> NO: Pawn cannot reach the target at {parentThing.Position}.");
+                return false;
+            }
 
             var availableToClaim = CentralLoadManager.Instance.GetAvailableToClaim(groupLoadable);
-            if (!availableToClaim.Any()) return false;
+            if (!availableToClaim.Any())
+            {
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO: Double-checked with Manager, available to claim is now empty.");
+                return false;
+            }
 
             var allDemands = groupLoadable.GetTransferables();
             if (allDemands == null) return false;
@@ -63,6 +94,7 @@ namespace BulkLoadForTransporters.Core.Utils
             foreach (var group in demandsByDef)
             {
                 var neededDef = group.Key;
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"  - Checking for sources of {neededDef.defName}...");
 
                 IEnumerable<Thing> initialSourceList;
 
@@ -70,6 +102,7 @@ namespace BulkLoadForTransporters.Core.Utils
                 if (neededDef == ThingDefOf.MinifiedThing)
                 {
                     initialSourceList = pawn.Map.listerThings.ThingsMatching(ThingRequest.ForGroup(ThingRequestGroup.MinifiedThing));
+                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"    - Using ThingsMatching for MinifiedThing.");
                 }
                 else
                 {
@@ -106,6 +139,7 @@ namespace BulkLoadForTransporters.Core.Utils
 
                 if (!availableSourcesOnMap.Any() && isSearchingForBooks)
                 {
+                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"    - No sources of {neededDef.defName} found on ground. Expanding search to bookshelves.");
                     var booksInShelves = new List<Thing>();
                     var bookshelves = pawn.Map.listerBuildings.AllBuildingsColonistOfClass<Building_Bookcase>();
                     foreach (var shelf in bookshelves)
@@ -128,7 +162,11 @@ namespace BulkLoadForTransporters.Core.Utils
                     }
                 }
 
-                if (!availableSourcesOnMap.Any()) continue; 
+                if (!availableSourcesOnMap.Any())
+                {
+                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"    - No available sources found for {neededDef.defName} after all checks. Continuing to next def.");
+                    continue;
+                }
 
                 foreach (var demand in group)
                 {
@@ -140,11 +178,13 @@ namespace BulkLoadForTransporters.Core.Utils
 
                     if (FindBestSourceFor(pawn, demand, availableSourcesOnMap) != null)
                     {
+                        DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"-> YES: Found a valid source for demand '{demand.AnyThing.LabelCap}' of type {neededDef.defName}.");
                         return true;
                     }
                 }
             }
 
+            DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO: Exhausted all demands and found no matchable sources on the map.");
             return false;
         }
 
@@ -157,17 +197,29 @@ namespace BulkLoadForTransporters.Core.Utils
         /// <returns>Always returns true, indicating the request has been handled (even if by creating a WaitJob).</returns>
         public static bool TryGiveBulkJob(Pawn pawn, IManagedLoadable groupLoadable, out Job job)
         {
+            var parentThingForLog = groupLoadable.GetParentThing();
+            DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"Should a bulk job be given to {pawn.LabelShort} for '{parentThingForLog?.LabelCap}' at {parentThingForLog?.Position}?");
             job = null;
-            if (pawn.RaceProps.IsMechanoid && !PickUpAndHaul.Settings.AllowMechanoids) return false;
+            if (pawn.RaceProps.IsMechanoid && !PickUpAndHaul.Settings.AllowMechanoids)
+            {
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO (return false): Pawn is a mechanoid and PUAH settings disallow it.");
+                return false;
+            }
 
 
             if (BulkLoad_Utility.TryCreateUnloadFirstJob(pawn, groupLoadable, out Job unloadJob))
             {
                 job = unloadJob;
+
+                // 在Lambda表达式中使用 out 参数 'job' 的本地副本 'finalUnloadJob'
+                Job finalUnloadJob = job;
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"-> YES: Created an opportunistic UNLOAD job with {finalUnloadJob.targetQueueA.Count} targets.");
+
                 return true;
             }
 
             var constraints = CentralLoadManager.Instance.GetAvailableToClaim(groupLoadable);
+            DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"  - No unload job. Proceeding to planning. Constraints from Manager: {constraints.Count} defs.");
 
             var plan = LoadingPlanner.TryCreateHaulPlan(pawn, groupLoadable, constraints);
             if (plan != null)
@@ -177,6 +229,7 @@ namespace BulkLoadForTransporters.Core.Utils
                 {
                     // 如果找不到匹配的 JobDef，安全失败
                     job = JobMaker.MakeJob(JobDefOf.Wait, 2, true);
+                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"-> YES (Wait Job): Planner succeeded, but no matching JobDef was found in the registry for '{groupLoadable.GetParentThing().def.defName}'.");
                     return true;
                 }
                 job = JobMaker.MakeJob(correctJobDef);
@@ -184,10 +237,15 @@ namespace BulkLoadForTransporters.Core.Utils
                 job.targetB = new LocalTargetInfo(groupLoadable.GetParentThing());
                 job.targetQueueA = plan.Targets;
                 job.countQueue = plan.Counts;
+                // 在Lambda表达式中使用 out 参数 'job' 的本地副本 'finalLoadJob'
+                Job finalLoadJob = job;
+                DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"-> YES: Planner created a LOAD job with {finalLoadJob.targetQueueA.Count} targets.");
+
                 return true;
             }
 
             job = JobMaker.MakeJob(JobDefOf.Wait, 2, true);
+            DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> YES (Wait Job): Planner returned no valid plan.");
             return true;
         }
 

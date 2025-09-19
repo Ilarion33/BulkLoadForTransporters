@@ -2,6 +2,7 @@
 //
 // HarmonyPatches/LoadTransporters/Game_DeinitAndRemoveMap_Patch.cs
 using BulkLoadForTransporters.Core;
+using BulkLoadForTransporters.Core.Utils;
 using HarmonyLib;
 using Verse;
 
@@ -21,6 +22,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
         /// <param name="map">The map that is about to be removed.</param>
         public static void Prefix(Map map)
         {
+            DebugLogger.LogMessage(LogCategory.Manager, () => $"Game_DeinitAndRemoveMap_Patch triggered for map {map?.uniqueID}. Notifying Manager.");
             CentralLoadManager.Instance?.Notify_MapRemoved(map);
         }
     }

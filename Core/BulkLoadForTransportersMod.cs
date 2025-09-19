@@ -30,7 +30,7 @@ namespace BulkLoadForTransporters.Core
             mainRect.yMax -= 40f;
 
             // 定义一个逻辑上的“画布”，其高度需要足够大以容纳所有内容，从而激活滚动条。
-            Rect contentRect = new Rect(0f, 0f, mainRect.width - 8f, 700f); 
+            Rect contentRect = new Rect(0f, 0f, mainRect.width - 8f, 870f); 
 
             Listing_Standard listingStandard = new Listing_Standard();
 
@@ -40,6 +40,9 @@ namespace BulkLoadForTransporters.Core
 
             GameFont originalFont = Text.Font;
             listingStandard.Gap(8f);
+
+            
+
 
             // --- 通用设置模块 ---
             Text.Font = GameFont.Medium;
@@ -68,8 +71,44 @@ namespace BulkLoadForTransporters.Core
                                   "BulkLoadForTransporters.Settings.VisualUnloadDelay.Tooltip".Translate());
             settings.visualUnloadDelay = (int)listingStandard.Slider(settings.visualUnloadDelay, 0, 30);
 
-            listingStandard.Gap(24f);
 
+
+            listingStandard.Gap(8f);
+
+            // 调试设置模块
+            Text.Font = Prefs.DevMode ? GameFont.Medium : GameFont.Small;
+            listingStandard.Label("BulkLoadForTransporters.Settings.Header.Debug".Translate(), -1f,
+                                  new TipSignal("BulkLoadForTransporters.Settings.Header.Debug.Tooltip".Translate()));
+            Text.Font = originalFont;
+
+            // 只有在开发者模式下才显示详细选项
+            if (Prefs.DevMode)
+            {
+                listingStandard.Gap(8f);
+
+                listingStandard.CheckboxLabeled("BulkLoadForTransporters.Settings.Debug.LogWorkGiver".Translate(),
+                                    ref settings.logWorkGiver,
+                                    "BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip".Translate());
+                listingStandard.Gap(8f);
+
+                listingStandard.CheckboxLabeled("BulkLoadForTransporters.Settings.Debug.LogPlanner".Translate(),
+                                                ref settings.logPlanner,
+                                                "BulkLoadForTransporters.Settings.Debug.LogPlanner.Tooltip".Translate());
+                listingStandard.Gap(8f);
+
+                listingStandard.CheckboxLabeled("BulkLoadForTransporters.Settings.Debug.LogToils".Translate(),
+                                                ref settings.logToils,
+                                                "BulkLoadForTransporters.Settings.Debug.LogToils.Tooltip".Translate());
+                listingStandard.Gap(8f);
+
+                listingStandard.CheckboxLabeled("BulkLoadForTransporters.Settings.Debug.LogManager".Translate(),
+                                                ref settings.logManager,
+                                                "BulkLoadForTransporters.Settings.Debug.LogManager.Tooltip".Translate());
+            }
+
+
+
+            listingStandard.Gap(28f);
 
             // --- 批量装载模块 ---
             DrawFeatureHeader(listingStandard,
@@ -160,6 +199,7 @@ namespace BulkLoadForTransporters.Core
                                 
             }
 
+            
 
             listingStandard.End();
 
