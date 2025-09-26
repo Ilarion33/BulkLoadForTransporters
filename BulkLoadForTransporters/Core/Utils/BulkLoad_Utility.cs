@@ -18,6 +18,33 @@ namespace BulkLoadForTransporters.Core.Utils
 {
     public static class BulkLoad_Utility
     {
+        /// <summary>
+        /// A high-performance, manually replicated version of the core logic from
+        /// CaravanFormingUtility.AllReachableColonyItems. It checks if a thing
+        /// is considered a valid "colony asset" for loading purposes.
+        /// </summary>
+        public static bool IsValidColonyAsset(Thing t, Pawn pawn)
+        {
+            // Must be spawned and not forbidden for the specific pawn
+            if (!t.Spawned || t.IsForbidden(pawn)) return false;
+
+            // Must belong to the player faction, if it has a faction
+            if (t.Faction != null && t.Faction != Faction.OfPlayer) return false;
+
+            // On non-home maps, area checks are ignored.
+            if (!pawn.Map.IsPlayerHome) return true;
+
+            // Check if the item is in a storage zone/slot. This is the highest priority check.
+            var slotGroup = t.GetSlotGroup();
+            if (slotGroup != null && slotGroup.Settings.AllowedToAccept(t)) return true;
+
+            // Check if the item is in the home area.
+            if (pawn.Map.areaManager.Home[t.Position]) return true;
+
+            // If none of the above, it's not a valid colony asset for general pickup.
+            return false;
+        }
+
         // NOTE: 这是一个全局信号旗，用来在执行我们自己的卸货记账时，
         public static bool IsExecutingManagedUnload = false;
 

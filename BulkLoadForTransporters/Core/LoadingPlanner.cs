@@ -146,25 +146,24 @@ namespace BulkLoadForTransporters.Core
             // 构建一次性的、预先过滤的供应品索引
             var supplyIndex = new Dictionary<ThingDef, List<Thing>>();
 
-            Area effectiveArea = null;
-            if (pawn.Map.IsPlayerHome)
-            {
-                effectiveArea = pawn.Map.areaManager.Home;
-            }
-            System.Func<IntVec3, bool> InAllowedArea = (IntVec3 pos) => effectiveArea == null || effectiveArea[pos];
+            // 将所有明确的需求物品预先计算到一个HashSet中。
+            var allExplicitlyDemandedThings = new HashSet<Thing>(sandboxTransferables.SelectMany(tr => tr.things));
 
-            // --- 2a. 高效扫描物品 (Things that are not Pawns) ---
+            // --- 2a. 高效扫描非Pawn物品 ---
             foreach (var thing in map.listerThings.ThingsMatching(ThingRequest.ForGroup(ThingRequestGroup.HaulableEver)))
             {
-                if (thing == null) continue;
+                if (thing == null || (thing is Pawn && !(thing is Corpse))) continue;
+                if (!allNeededDefs.Contains(thing.def)) continue;
 
-                if (!InAllowedArea(thing.Position)) continue;
-                // 跳过活着的Pawn，它们将在下一步被专门处理
-                if (thing is Pawn && !(thing is Corpse)) continue;
+                // 条件 B: 物品是任务清单上明确指定的实例吗？
+                bool isExplicitlyDemanded = allExplicitlyDemandedThings.Contains(thing);
+                // 条件 A: 物品是“殖民地资产”吗？
+                bool isColonyAsset = BulkLoad_Utility.IsValidColonyAsset(thing, pawn);
 
-                if (allNeededDefs.Contains(thing.def))
+                if (isExplicitlyDemanded || isColonyAsset)
                 {
-                    if (thing.Spawned && !thing.IsForbidden(pawn) && pawn.CanReserveAndReach(thing, PathEndMode.ClosestTouch, Danger.Deadly))
+                    // 只有当物品符合任一条件时，才进行昂贵的可达性检查。
+                    if (pawn.CanReserveAndReach(thing, PathEndMode.ClosestTouch, Danger.Deadly))
                     {
                         if (!supplyIndex.TryGetValue(thing.def, out var list))
                         {
@@ -180,17 +179,17 @@ namespace BulkLoadForTransporters.Core
             foreach (var livePawn in map.mapPawns.AllPawnsSpawned)
             {
                 if (livePawn == null) continue;
+                if (!allNeededDefs.Contains(livePawn.def)) continue;
 
-                if (allNeededDefs.Contains(livePawn.def))
+                if (allExplicitlyDemandedThings.Contains(livePawn) || BulkLoad_Utility.IsValidColonyAsset(livePawn, pawn))
                 {
-                    if (!livePawn.IsForbidden(pawn) && pawn.CanReserveAndReach(livePawn, PathEndMode.ClosestTouch, Danger.Deadly))
+                    if (pawn.CanReserveAndReach(livePawn, PathEndMode.ClosestTouch, Danger.Deadly))
                     {
                         if (!supplyIndex.TryGetValue(livePawn.def, out var list))
                         {
                             list = new List<Thing>();
                             supplyIndex[livePawn.def] = list;
                         }
-                        // 防止重复添加（虽然不太可能发生）
                         if (!list.Contains(livePawn))
                         {
                             list.Add(livePawn);

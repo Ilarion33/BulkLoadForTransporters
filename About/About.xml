@@ -24,9 +24,21 @@
 		</li>
 	</modDependencies>
 
+	<loadAfter>
+        <li MayRequire="brrainz.harmony">brrainz.harmony</li>
+        <li MayRequire="Mehni.PickUpAndHaul">Mehni.PickUpAndHaul</li>
+        <li MayRequire="teemo.pickupandhaulforked">teemo.pickupandhaulforked</li>
+        <li MayRequire="memegoddess.pickupandhaul">memegoddess.pickupandhaul</li>
+        <li MayRequire="mehni.pickupandhaul.unoffical">mehni.pickupandhaul.unoffical</li>
+        <li MayRequire="SmashPhil.VehicleFramework">SmashPhil.VehicleFramework</li>
+    </loadAfter>
+
 	<description>
-A smart QoL mod designed to boost the loading efficiency of transport pods and shuttles. 
-Enables multiple colonists to work together on a single loading task, planning bulk-hauling routes that significantly reduce the time and labor required for large shipments. Requires Pick Up And Haul.
+Tired of watching your colonists take all day to load transport pods and shuttles? This smart QoL mod supercharges their loading efficiency. 
+
+Enables multi-colonist bulk hauling for Transport Pods, Shuttles, Map Portals, Vehicles, and allows for bulk unloading of Pack Animals. Drastically reduces the time and labor needed for large-scale logistics. Requires Pick Up And Haul (or a compatible fork).
+
+NOTE FOR USERS OF PUAH FORKS: You may see a warning icon about a missing dependency in the mod list. This is expected and can be safely ignored as long as you have an active Pick Up And Haul fork.
 	</description>
 
 </ModMetaData>

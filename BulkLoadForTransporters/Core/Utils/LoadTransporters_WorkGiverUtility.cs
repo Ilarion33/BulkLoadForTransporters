@@ -116,49 +116,29 @@ namespace BulkLoadForTransporters.Core.Utils
                 }
 
 
-                // 分层过滤与日志记录
-                // --- 1. 基础过滤 ---
-                var baseFilteredSources = initialSourceList
-                    .Where(thing => thing.Spawned && !thing.IsForbidden(pawn))
-                    .ToList(); // ToList() to avoid multiple enumerations
+                // --- 统一的、高性能的过滤逻辑 ---
+                // 这个HashSet用于快速查找需求清单上明确指定的物品实例。
+                var explicitlyDemandedThings = new HashSet<Thing>(group.SelectMany(d => d.things));
 
-                if (!baseFilteredSources.Any())
-                {
-                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"    - No spawned, unforbidden sources found for {neededDef.defName}.");
-                    continue;
-                }
+                var availableSourcesOnMap = initialSourceList
+                    .Where(thing => {
+                        // 条件 B: 物品是任务清单上明确指定的实例吗？
+                        if (explicitlyDemandedThings.Contains(thing))
+                        {
+                            // 如果是，我们只需要做最基础的可达性检查。
+                            return thing.Spawned && !thing.IsForbidden(pawn) && pawn.CanReserveAndReach(thing, PathEndMode.ClosestTouch, Danger.Deadly);
+                        }
 
-                // --- 2. 区域过滤 (仅对非Pawn物品) ---
-                Area effectiveArea = null;
-                if (pawn.Map.IsPlayerHome)
-                {
-                    effectiveArea = pawn.Map.areaManager.Home;
-                }
+                        // 条件 A: 物品是“殖民地资产”吗？
+                        // 我们在这里调用新的辅助方法，它包含了区域、存储和派系检查。
+                        if (BulkLoad_Utility.IsValidColonyAsset(thing, pawn))
+                        {
+                            // 如果是，我们同样需要做可达性检查。
+                            return pawn.CanReserveAndReach(thing, PathEndMode.ClosestTouch, Danger.Deadly);
+                        }
 
-                var areaFilteredSources = baseFilteredSources
-                    .Where(thing => !(thing is Pawn) ? (effectiveArea == null || effectiveArea[thing.Position]) : true)
-                    .ToList();
-
-                if (!areaFilteredSources.Any())
-                {
-                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"    - Sources found, but all are outside of {pawn.LabelShort}'s allowed area ('{pawn.playerSettings?.AreaRestrictionInPawnCurrentMap?.Label ?? "Home"}').");
-                    continue;
-                }
-
-                // --- 3. 可达性与预定过滤 (最昂贵) ---
-                var reachableSources = areaFilteredSources
-                    .Where(thing => pawn.CanReserveAndReach(thing, PathEndMode.ClosestTouch, Danger.Deadly))
-                    .ToList();
-
-                if (!reachableSources.Any())
-                {
-                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"    - Sources found in allowed area, but none are reachable or reservable by {pawn.LabelShort} right now (might be reserved by others).");
-                    continue;
-                }
-
-                // --- 最终的可用源列表 ---
-                var availableSourcesOnMap = reachableSources;
-
+                        return false;
+                    });
 
 
                 // HACK: 这是“书架难题”的解决方案。如果在地板上找不到书，我们就扩大搜索范围，检查书架内部。
