@@ -50,7 +50,7 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Scanning {itemsFromPuah.Count} items in PUAH inventory.");
                 foreach (var thing in itemsFromPuah)
                 {
-                    if (BulkLoad_Utility.FindBestMatchFor(thing, neededTransferables) != null)
+                    if (Global_Utility.FindBestMatchFor(thing, neededTransferables) != null)
                     {
                         // TrackOriginalPuahItem 用于在Job结束时正确地与PUAH进行状态同步。
                         haulState.TrackOriginalPuahItem(thing);

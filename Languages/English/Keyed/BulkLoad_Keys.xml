@@ -11,6 +11,9 @@
   <BulkLoadForTransporters.ReportString.Unloading>Bulk unloading {0}.</BulkLoadForTransporters.ReportString.Unloading>
   <BulkLoadForTransporters.ReportString.Unloading_Generic>Bulk unloading</BulkLoadForTransporters.ReportString.Unloading_Generic>
 
+<BulkLoadForTransporters.ReportString.DeliveringTo>Bulk delivering materials to {0}</BulkLoadForTransporters.ReportString.DeliveringTo>
+<BulkLoadForTransporters.ReportString.DeliveringTo_Generic>Bulk delivering materials</BulkLoadForTransporters.ReportString.DeliveringTo_Generic>
+
   <!-- Right-Click Float Menu Option -->
   <BulkLoadForTransporters.PriorityLoadCommand>Prioritize bulk loading {0}</BulkLoadForTransporters.PriorityLoadCommand>
   <BulkLoadForTransporters.PriorityUnloadCommand>Prioritize bulk unloading {0}</BulkLoadForTransporters.PriorityUnloadCommand>
@@ -24,7 +27,7 @@
   <!-- ==================== Mod Settings ==================== -->
 
   <BulkLoadForTransporters.Settings.Header.Debug>Debug Settings (Developer Mode Only)</BulkLoadForTransporters.Settings.Header.Debug>
-  <BulkLoadForTransporters.Settings.Header.Debug.Tooltip>Debugging log options. Detailed options are only visible and effective in Developer Mode.\n\nIt is not recommended to enable multiple log options simultaneously, as the massive amount of output may cause performance issues.</BulkLoadForTransporters.Settings.Header.Debug.Tooltip>  
+  <BulkLoadForTransporters.Settings.Header.Debug.Tooltip>Debugging log options. Detailed options are only visible and effective in Developer Mode.</BulkLoadForTransporters.Settings.Header.Debug.Tooltip>  
   
   <BulkLoadForTransporters.Settings.Debug.LogWorkGiver>Log WorkGiver</BulkLoadForTransporters.Settings.Debug.LogWorkGiver>
   <BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>Enable this if colonists are NOT starting bulk jobs when you expect, or ARE starting them when they shouldn't. This log tracks the "Should I work?" decision process.</BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>
@@ -42,16 +45,25 @@
   <BulkLoadForTransporters.Settings.Header.BulkUnload>Enable Bulk Unload Carriers</BulkLoadForTransporters.Settings.Header.BulkUnload>
   <BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>Settings for the additional feature: unloading pack animals and other carriers in bulk.</BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>
   <BulkLoadForTransporters.Settings.Header.General>General Settings</BulkLoadForTransporters.Settings.Header.General>
+  <BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery>Enable Bulk Delivery for Construction</BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery>
+  <BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip>Master switch to enable or disable the entire feature of bulk hauling materials for blueprints and frames.</BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip>
 
-  <BulkLoadForTransporters.Settings.Header.BulkLoadVehicle>Enable Bulk Load Vehicles</BulkLoadForTransporters.Settings.Header.BulkLoadVehicle>
-  <BulkLoadForTransporters.Settings.Header.BulkLoadVehicle.Tooltip>Master switch to enable or disable the entire bulk loading feature for the Vehicles Framework.</BulkLoadForTransporters.Settings.Header.BulkLoadVehicle.Tooltip>
-  
+  <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>Force surplus into inventory (ignore mass)</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>
+  <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>When enabled, any surplus items left in a pawn's hands after delivery will be forced back into their inventory, even if it makes them over-encumbered. This prevents items from being dropped on the ground, ensuring a smoother workflow at the cost of realism.</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>
+	
+  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius>Job Chaining Radius (cells): {0}</BulkLoadForTransporters.Settings.ConstructionChainScanRadius>
+  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip>After completing a material delivery, a colonist will search for the next needy construction site within this radius to "chain" tasks. \nDefault: 15. Set to 0 to completely disable job chaining for construction.</BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip>
+  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled>Disabled</BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled>
+
+  <BulkLoadForTransporters.Settings.ConstructionGroupingGridSize>Site Grouping Grid Size (cells): {0}x{0}</BulkLoadForTransporters.Settings.ConstructionGroupingGridSize>
+  <BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip>Determines how nearby construction sites are grouped together for unified planning. A larger grid means colonists will plan for more sites at once; a smaller grid is more localized.\nDefault: 32x32.</BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip>
+	
   <BulkLoadForTransporters.Settings.AiUpdateFrequency>Update Frequency (Ticks): {0}</BulkLoadForTransporters.Settings.AiUpdateFrequency>
   <BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>Lower values mean faster colonists' reaction but may cost more performance. Higher values improve performance.\nDefault: 60 (1 second).</BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>
 
-  <!-- <BulkLoadForTransporters.Settings.StopPlanningAtPercent>Load satisfaction threshold: {0}</BulkLoadForTransporters.Settings.StopPlanningAtPercent>
-  <BulkLoadForTransporters.Settings.StopPlanningAtPercent.Tooltip>When the planned hauling mass reaches this percentage of the pawn's physical capacity, the colonists will stop looking for more items to "top off" the load. This prevents pawns from making inefficient long-distance trips just to fill the last bit of space.\nDefault: 98%.</BulkLoadForTransporters.Settings.StopPlanningAtPercent.Tooltip> -->
-  
+  <BulkLoadForTransporters.Settings.EnableSoftlockCleaner>Enable PUAH Inventory Cleaner</BulkLoadForTransporters.Settings.EnableSoftlockCleaner>
+  <BulkLoadForTransporters.Settings.EnableSoftlockCleaner.Tooltip>[Recommended] Periodically checks for and drops items from the Pick Up And Haul inventories of pawns who are incapable of hauling. This prevents items from getting "soft-locked" on non-haulers.</BulkLoadForTransporters.Settings.EnableSoftlockCleaner.Tooltip>
+	
   <BulkLoadForTransporters.Settings.EnableContinuousLoading>Enable 'load until complete' command</BulkLoadForTransporters.Settings.EnableContinuousLoading>
   <BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>Adds a right-click option to make colonists continuously work on loading transporters in an area until all tasks are done.</BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>
   
@@ -61,9 +73,9 @@
   <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>Reserve carrier during bulk unload</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>
   <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>Determines if the carrier is reserved during the unloading process.\n\nEnabled: The job is uninterruptible, similar to vanilla behavior.\n\nDisabled: The job will be automatically cancelled if there is another task like roping needs the carrier.</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>
 
-  <BulkLoadForTransporters.Settings.OpportunityScanRadius>Opportunity Scan Radius (Tiles): {0}</BulkLoadForTransporters.Settings.OpportunityScanRadius>
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius>Opportunity Scan Radius (cells): {0}</BulkLoadForTransporters.Settings.OpportunityScanRadius>
   <BulkLoadForTransporters.Settings.OpportunityScanRadius.Unlimited>Unlimited</BulkLoadForTransporters.Settings.OpportunityScanRadius.Unlimited>
-  <BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>When a hauler has items in their Pick Up And Haul inventory, how far will they look for transport pod loading opportunities?\nDefault: 40. Set to max for unlimited (whole map) scanning.</BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>When a hauler has items in their Pick Up And Haul inventory, how far will they look for transport pod loading opportunities?\nDefault: 90. Set to max for unlimited (whole map) scanning.</BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>
 
   <BulkLoadForTransporters.Settings.PathfindingCandidates>Pathfinding Accuracy vs. Performance: {0}</BulkLoadForTransporters.Settings.PathfindingCandidates>
   <BulkLoadForTransporters.Settings.PathfindingCandidates.Tooltip>Controls the trade-off between pathfinding accuracy and performance. Higher values result in more intelligent routes but require more processing.\n\n1: Colonists decide which item to pick up next based only on straight-line distance. \n\n2-6: Colonists first identify the N closest targets by straight-line distance, then calculate the actual walking distance for only that group to find the truly optimal target. \n\nDefault: 3.</BulkLoadForTransporters.Settings.PathfindingCandidates.Tooltip>
@@ -78,5 +90,8 @@
   <BulkLoadForTransporters.Settings.AutoOpenTransporterContents.Tooltip>When you select a transport pod or shuttle, automatically open the 'Contents' tab.</BulkLoadForTransporters.Settings.AutoOpenTransporterContents.Tooltip>
   <BulkLoadForTransporters.Settings.AutoOpenCarrierGear>Auto-open 'Gear' tab for carriers</BulkLoadForTransporters.Settings.AutoOpenCarrierGear>
   <BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip>When you select a pack animal (carrier), automatically open the 'Gear' tab to see its inventory.</BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip>
+
+  <BulkLoadForTransporters.Settings.ResetButton>Reset to Defaults</BulkLoadForTransporters.Settings.ResetButton>
+  <BulkLoadForTransporters.Settings.ResetConfirmDialog>Are you sure you want to reset all settings to their default values?</BulkLoadForTransporters.Settings.ResetConfirmDialog>
 
 </LanguageData>

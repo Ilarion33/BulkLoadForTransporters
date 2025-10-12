@@ -3,7 +3,7 @@
 // Jobs/Toils_LoadTransporters/Toil_TakeToCarry.cs
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
-using UnityEngine; // For Mathf
+using UnityEngine;
 using Verse;
 using Verse.AI;
 
@@ -14,22 +14,16 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
     /// </summary>
     public static class Toil_TakeToCarry
     {
-        /// <summary>
-        /// Creates a Toil that makes the pawn pick up a target Thing and hold it.
-        /// </summary>
-        /// <param name="index">The TargetIndex where the Thing to be picked up is stored.</param>
-        /// <param name="haulState">The JobDriver's state interface for tracking hauled items.</param>
-        /// <returns>A configured Toil ready to be used in a JobDriver.</returns>
         public static Toil Create(TargetIndex index, IBulkHaulState haulState)
         {
-            Toil toil = ToilMaker.MakeToil("TakeToCarry");
+            Toil toil = ToilMaker.MakeToil("TakeToCarry_UpgradedAndHardened");
             toil.initAction = () =>
             {
                 Pawn actor = toil.actor;
                 Job curJob = actor.CurJob;
                 Thing thingToPickUp = curJob.GetTarget(index).Thing;
-                DebugLogger.LogMessage(LogCategory.Toils, () => $"{actor.LabelShort} is taking {thingToPickUp?.LabelCap} to CARRY.");
 
+                // --- 在所有操作之前，进行严格的有效性检查 ---
                 if (thingToPickUp == null || thingToPickUp.Destroyed)
                 {
                     DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil FAILED: Thing to pick up is null or destroyed.");
@@ -37,37 +31,79 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                     return;
                 }
 
-                // 从Job的count字段中读取规划好的拾取数量。
-                int plannedCount = curJob.count;
-                int countToPickUp = Mathf.Min(plannedCount, thingToPickUp.stackCount);
-                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Planned: {plannedCount}, On ground: {thingToPickUp.stackCount}. Will take: {countToPickUp}.");
-
-                if (countToPickUp <= 0)
+                Thing carriedThing = actor.carryTracker.CarriedThing;
+                if (carriedThing != null &&
+                    carriedThing.def == thingToPickUp.def &&
+                    carriedThing.CanStackWith(thingToPickUp))
                 {
-                    DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Calculated count to pick up is zero.");
-                    return;
-                }
+                    // --- “合并”分支 ---
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"{actor.LabelShort} is MERGING {thingToPickUp.LabelCap} into carried thing.");
 
-                // NOTE: 在释放预定前，先检查我们是否真的拥有它。
-                if (actor.Map.reservationManager.ReservedBy(thingToPickUp, actor, curJob))
-                {
-                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Releasing reservation on {thingToPickUp.LabelCap}.");
-                    actor.Map.reservationManager.Release(thingToPickUp, actor, curJob);
-                }
+                    int countToTake = Mathf.Min(curJob.count, thingToPickUp.stackCount);
+                    int spaceInHands = carriedThing.def.stackLimit - carriedThing.stackCount;
+                    countToTake = Mathf.Min(countToTake, spaceInHands);
 
-                Thing itemToCarry = thingToPickUp.SplitOff(countToPickUp);
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Planned: {curJob.count}, On ground: {thingToPickUp.stackCount}, Space in hands: {spaceInHands}. Will merge: {countToTake}.");
 
-                // 尝试将新分离出的物品放入小人手中。
-                if (actor.carryTracker.TryStartCarry(itemToCarry))
-                {
-                    haulState.AddHauledThing(actor.carryTracker.CarriedThing);
-                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Successfully carried {actor.carryTracker.CarriedThing.LabelCap}. HauledThings count: {haulState.HauledThings.Count}.");
+                    if (countToTake <= 0)
+                    {
+                        DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: No space in hands to merge.");
+                        return;
+                    }
+
+                    Thing chunkToAbsorb = thingToPickUp.SplitOff(countToTake);
+
+                    if (!carriedThing.TryAbsorbStack(chunkToAbsorb, true))
+                    {
+                        Log.Error($"[BulkLoad] TakeToCarry merge failed unexpectedly. Placing chunk on ground to prevent loss.");
+                        GenPlace.TryPlaceThing(chunkToAbsorb, actor.Position, actor.Map, ThingPlaceMode.Near);
+                    }
+                    else
+                    {
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Successfully merged. Carried thing is now {carriedThing.LabelCap}.");
+                    }
+
+                    if (actor.Map.reservationManager.ReservedBy(thingToPickUp, actor, curJob))
+                    {
+                        actor.Map.reservationManager.Release(thingToPickUp, actor, curJob);
+                    }
                 }
                 else
                 {
-                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - TryStartCarry FAILED for {itemToCarry.LabelCap}. Dropping on ground.");
-                    Log.Error($"[BulkLoad] Failed to carry {itemToCarry.LabelCap}. Placing back on ground.");
-                    GenPlace.TryPlaceThing(itemToCarry, actor.Position, actor.Map, ThingPlaceMode.Near);
+                    // --- “拿起”分支 ---
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"{actor.LabelShort} is taking {thingToPickUp.LabelCap} to CARRY.");
+
+                    int plannedCount = curJob.count;
+                    int countToPickUp = Mathf.Min(plannedCount, thingToPickUp.stackCount);
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Planned: {plannedCount}, On ground: {thingToPickUp.stackCount}. Will take: {countToPickUp}.");
+
+                    if (countToPickUp <= 0)
+                    {
+                        DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Calculated count to pick up is zero.");
+                        return;
+                    }
+
+                    if (actor.Map.reservationManager.ReservedBy(thingToPickUp, actor, curJob))
+                    {
+                        actor.Map.reservationManager.Release(thingToPickUp, actor, curJob);
+                    }
+
+                    // 先分离，再尝试拿起，失败则丢弃
+                    Thing itemToCarry = thingToPickUp.SplitOff(countToPickUp);
+
+                    if (actor.carryTracker.TryStartCarry(itemToCarry))
+                    {
+                        // 只有在成功拿起后，才添加到 haulState
+                        haulState.AddHauledThing(actor.carryTracker.CarriedThing);
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Successfully carried {actor.carryTracker.CarriedThing.LabelCap}. HauledThings count: {haulState.HauledThings.Count}.");
+                    }
+                    else
+                    {
+                        // 如果 TryStartCarry 失败，将分离出的部分丢在地上，防止物品丢失
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - TryStartCarry FAILED for {itemToCarry.LabelCap}. Dropping on ground.");
+                        Log.Error($"[BulkLoad] Failed to carry {itemToCarry.LabelCap}. Placing back on ground.");
+                        GenPlace.TryPlaceThing(itemToCarry, actor.Position, actor.Map, ThingPlaceMode.Near);
+                    }
                 }
             };
             toil.defaultCompleteMode = ToilCompleteMode.Instant;

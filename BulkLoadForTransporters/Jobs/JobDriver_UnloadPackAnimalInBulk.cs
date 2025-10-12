@@ -53,6 +53,12 @@ namespace BulkLoadForTransporters.Jobs
         /// </summary>
         protected override IEnumerable<Toil> MakeNewToils()
         {
+            if (pawn.Map == null)
+            {
+                this.ResetToilIndex();
+                yield break;
+            }
+
             // 注册中断安全的回滚逻辑。
             // NOTE: 这个FinishAction只在任务被中断或失败时触发。
             // 任务成功完成的路径由最后一个Toil(Toil_FinalizeUnload)专门处理。

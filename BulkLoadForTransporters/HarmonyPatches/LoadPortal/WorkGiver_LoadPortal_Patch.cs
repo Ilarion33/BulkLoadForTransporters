@@ -33,7 +33,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadPortal
             // 创建特定于 MapPortal 的 Adapter 实例
             IManagedLoadable groupLoadable = new MapPortalAdapter(portal);
 
-            __result = LoadTransporters_WorkGiverUtility.HasPotentialBulkWork(pawn, groupLoadable);
+            __result = WorkGiver_Utility.HasPotentialBulkWork(pawn, groupLoadable);
 
             return false;
         }
@@ -47,7 +47,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadPortal
         {
             IManagedLoadable groupLoadable = new MapPortalAdapter(portal);
 
-            LoadTransporters_WorkGiverUtility.TryGiveBulkJob(p, groupLoadable, out __result);
+            WorkGiver_Utility.TryGiveBulkJob(p, groupLoadable, out __result);
 
             return false;
         }

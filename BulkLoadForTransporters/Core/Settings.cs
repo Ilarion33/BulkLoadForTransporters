@@ -16,14 +16,21 @@ namespace BulkLoadForTransporters.Core
         public bool enableBulkLoadPortal = true;
         public bool enableBulkLoadVehicles = true;
         public bool enableBulkUnloadCarriers = true;
+        public bool enableBulkConstructionDelivery = true;
 
         // --- General Settings ---
         public int AiUpdateFrequency = 60;
         public int visualUnloadDelay = 15;
         public bool cleanupOnSave = true;
+        public bool enableSoftlockCleaner = true;
+        public bool cheatIgnoreInventoryMass = true;
 
-        // --- Bulk Loading Settings (Shared by Transporters and Portals) ---
-        public float opportunityScanRadius = 40f;
+        // --- Construction Delivery ---
+        public int constructionGroupingGridSize = 32;
+        public float constructionChainScanRadius = 20f;
+
+        // --- Bulk Loading Settings ---
+        public float opportunityScanRadius = 90f;
         //public float stopPlanningAtPercent = 0.98f;
         public int pathfindingHeuristicCandidates = 3;
         public bool enableContinuousLoading = true;
@@ -54,21 +61,26 @@ namespace BulkLoadForTransporters.Core
             Scribe_Values.Look(ref enableBulkLoadPortal, "enableBulkLoadPortal", true);
             Scribe_Values.Look(ref enableBulkLoadVehicles, "enableBulkLoadVehicles", true);
             Scribe_Values.Look(ref enableBulkUnloadCarriers, "enableBulkUnloadCarriers", true);
+            Scribe_Values.Look(ref enableBulkConstructionDelivery, "enableBulkConstructionDelivery", true);
 
 
             // --- General ---
             Scribe_Values.Look(ref AiUpdateFrequency, "AiUpdateFrequency", 60);
             Scribe_Values.Look(ref visualUnloadDelay, "visualUnloadDelay", 15);
             Scribe_Values.Look(ref cleanupOnSave, "cleanupOnSave", true);
+            Scribe_Values.Look(ref enableSoftlockCleaner, "enableSoftlockCleaner", true);
+            Scribe_Values.Look(ref cheatIgnoreInventoryMass, "cheatIgnoreInventoryMass", true);
 
             Scribe_Values.Look(ref logPlanner, "logPlanner", false);
             Scribe_Values.Look(ref logWorkGiver, "logWorkGiver", false);
             Scribe_Values.Look(ref logToils, "logToils", false);
             Scribe_Values.Look(ref logManager, "logManager", false);
 
+            Scribe_Values.Look(ref constructionGroupingGridSize, "constructionGroupingGridSize", 32);
+            Scribe_Values.Look(ref constructionChainScanRadius, "constructionChainScanRadius", 20f);
 
             // --- Bulk Loading ---
-            Scribe_Values.Look(ref opportunityScanRadius, "opportunityScanRadius", 40f);
+            Scribe_Values.Look(ref opportunityScanRadius, "opportunityScanRadius", 90f);
             //Scribe_Values.Look(ref stopPlanningAtPercent, "stopPlanningAtPercent", 0.98f);
             Scribe_Values.Look(ref pathfindingHeuristicCandidates, "pathfindingHeuristicCandidates", 3);
             Scribe_Values.Look(ref enableContinuousLoading, "enableContinuousLoading", true);
@@ -80,6 +92,46 @@ namespace BulkLoadForTransporters.Core
             Scribe_Values.Look(ref reserveCarrierOnUnload, "reserveCarrierOnUnload", false);
             Scribe_Values.Look(ref autoOpenCarrierGear, "autoOpenCarrierGear", true);
 
+        }
+
+        public void Reset()
+        {
+            var defaultSettings = new Settings();
+
+            // --- Feature Master Switches ---
+            this.enableBulkLoadTransporters = defaultSettings.enableBulkLoadTransporters;
+            this.enableBulkLoadPortal = defaultSettings.enableBulkLoadPortal;
+            this.enableBulkLoadVehicles = defaultSettings.enableBulkLoadVehicles;
+            this.enableBulkUnloadCarriers = defaultSettings.enableBulkUnloadCarriers;
+            this.enableBulkConstructionDelivery = defaultSettings.enableBulkConstructionDelivery;
+
+            // --- General Settings ---
+            this.AiUpdateFrequency = defaultSettings.AiUpdateFrequency;
+            this.visualUnloadDelay = defaultSettings.visualUnloadDelay;
+            this.cleanupOnSave = defaultSettings.cleanupOnSave;
+            this.enableSoftlockCleaner = defaultSettings.enableSoftlockCleaner;
+            this.cheatIgnoreInventoryMass = defaultSettings.cheatIgnoreInventoryMass;
+
+            // --- Construction Delivery ---
+            this.constructionGroupingGridSize = defaultSettings.constructionGroupingGridSize;
+            this.constructionChainScanRadius = defaultSettings.constructionChainScanRadius;
+
+            // --- Bulk Loading Settings ---
+            this.opportunityScanRadius = defaultSettings.opportunityScanRadius;
+            this.pathfindingHeuristicCandidates = defaultSettings.pathfindingHeuristicCandidates;
+            this.enableContinuousLoading = defaultSettings.enableContinuousLoading;
+            this.autoOpenTransporterContents = defaultSettings.autoOpenTransporterContents;
+
+            // --- Bulk Unloading Settings ---
+            this.minFreeSpaceToUnloadCarrierPct = defaultSettings.minFreeSpaceToUnloadCarrierPct;
+            this.reserveCarrierOnUnload = defaultSettings.reserveCarrierOnUnload;
+            this.autoOpenCarrierGear = defaultSettings.autoOpenCarrierGear;
+
+            // --- Debug Logging Settings ---
+            this.logPlanner = defaultSettings.logPlanner;
+            this.logWorkGiver = defaultSettings.logWorkGiver;
+            this.logToils = defaultSettings.logToils;
+            this.logManager = defaultSettings.logManager;
         }
     }
 }

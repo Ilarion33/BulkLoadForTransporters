@@ -11,7 +11,10 @@
   <BulkLoadForTransporters.ReportString.Unloading>正在批量卸载{0}。</BulkLoadForTransporters.ReportString.Unloading>
   <BulkLoadForTransporters.ReportString.Unloading_Generic>正在批量卸载</BulkLoadForTransporters.ReportString.Unloading_Generic>
 
-  <!-- Right-Click Float Menu Option (右键菜单) -->
+  <BulkLoadForTransporters.ReportString.DeliveringTo>正在批量搬运建材到{0}</BulkLoadForTransporters.ReportString.DeliveringTo>
+  <BulkLoadForTransporters.ReportString.DeliveringTo_Generic>正在批量搬运建材中</BulkLoadForTransporters.ReportString.DeliveringTo_Generic>
+
+	<!-- Right-Click Float Menu Option (右键菜单) -->
   <BulkLoadForTransporters.PriorityLoadCommand>优先批量装载{0}</BulkLoadForTransporters.PriorityLoadCommand>
   <BulkLoadForTransporters.PriorityUnloadCommand>优先批量卸载{0}</BulkLoadForTransporters.PriorityUnloadCommand>
   <BulkLoadForTransporters.PriorityLoadUntilCompleteCommand>优先批量装载{0}直到完成</BulkLoadForTransporters.PriorityLoadUntilCompleteCommand>
@@ -24,7 +27,7 @@
   <!-- ==================== Mod Settings ==================== -->
 
   <BulkLoadForTransporters.Settings.Header.Debug>调试设置（仅开发者模式）</BulkLoadForTransporters.Settings.Header.Debug>
-  <BulkLoadForTransporters.Settings.Header.Debug.Tooltip>调试日志选项。详细选项仅在开发者模式下可见并生效。\n\n建议不要同时打开多个日志选项，否则日志输出量巨大，可能会导致游戏卡顿。</BulkLoadForTransporters.Settings.Header.Debug.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.Debug.Tooltip>调试日志选项。详细选项仅在开发者模式下可见并生效。</BulkLoadForTransporters.Settings.Header.Debug.Tooltip>
 
   <BulkLoadForTransporters.Settings.Debug.LogWorkGiver>工作分配器(WorkGiver)日志</BulkLoadForTransporters.Settings.Debug.LogWorkGiver>
   <BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>如果遇到以下问题，请开启此项：\n殖民者在您预期的时机“没有”开始批量任务，或者在“不该”开始任务时开始了任务。此日志追踪“我应不应该工作？”的决策过程。</BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>
@@ -42,16 +45,25 @@
   <BulkLoadForTransporters.Settings.Header.BulkUnload>启用批量卸载驮兽</BulkLoadForTransporters.Settings.Header.BulkUnload>
   <BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>附加功能的相关设置：批量卸载驮兽和其他运输单位。</BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>
   <BulkLoadForTransporters.Settings.Header.General>通用设置</BulkLoadForTransporters.Settings.Header.General>
+  <BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery>启用批量配送建材</BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery>
+  <BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip>用于开启或关闭整个为蓝图和建筑框架批量运送材料功能的总开关。</BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip>
 
-  <BulkLoadForTransporters.Settings.Header.BulkLoadVehicle>启用批量装载载具</BulkLoadForTransporters.Settings.Header.BulkLoadVehicle>
-  <BulkLoadForTransporters.Settings.Header.BulkLoadVehicle.Tooltip>用于开启或关闭整个“载具框架”批量装载功能的总开关。</BulkLoadForTransporters.Settings.Header.BulkLoadVehicle.Tooltip>
+  <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>强制将剩余物放入背包 (无视负重)</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>
+  <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>启用后，在配送后小人手上剩余的任何物品，都将被强制放回背包，即使这会导致超重。这可以防止物品被丢在地上，略微牺牲真实性，确保工作更流畅。</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>
+	
+  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius>任务接力半径(格): {0} </BulkLoadForTransporters.Settings.ConstructionChainScanRadius>
+  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip>在完成一次建材配送后，殖民者会在此半径内寻找下一个需要建材的工地以形成“接力”。\n默认值: 15。设为0可完全关闭工地的任务接力功能。</BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip>
+  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled>已禁用</BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled>
 
+  <BulkLoadForTransporters.Settings.ConstructionGroupingGridSize>工地分组地块大小(格): {0}x{0}</BulkLoadForTransporters.Settings.ConstructionGroupingGridSize>
+  <BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip>决定了附近的工地如何被分组以进行统一规划。更大的地块意味着小人一次会为更多的工地做计划；更小的地块则更具局部性。\n默认值: 32x32。</BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip>
+  
   <BulkLoadForTransporters.Settings.AiUpdateFrequency>更新频率 (Ticks): {0}</BulkLoadForTransporters.Settings.AiUpdateFrequency>
   <BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>较低的值意味着殖民者响应更快，但可能消耗更多性能。较高的值可以提升性能。\n默认值: 60 (1秒)。</BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>
-
-  <!-- <BulkLoadForTransporters.Settings.StopPlanningAtPercent>负重满足阈值: {0}</BulkLoadForTransporters.Settings.StopPlanningAtPercent>
-  <BulkLoadForTransporters.Settings.StopPlanningAtPercent.Tooltip>当规划的拾取总重量达到背包物理上限的这个百分比时，殖民者将停止寻找更多物品来“凑整”。这可以避免小人为了填满最后一点空间而进行不必要的长途奔波。\n默认值: 98%。</BulkLoadForTransporters.Settings.StopPlanningAtPercent.Tooltip> -->
   
+  <BulkLoadForTransporters.Settings.EnableSoftlockCleaner>启用PUAH库存清理器</BulkLoadForTransporters.Settings.EnableSoftlockCleaner>
+  <BulkLoadForTransporters.Settings.EnableSoftlockCleaner.Tooltip>【推荐开启】周期性地检查那些不具备搬运能力、或未被允许搬运的工作者，并丢下他们“PUAH库存”中的物品。防止物品被“软锁”在非搬运工身上。</BulkLoadForTransporters.Settings.EnableSoftlockCleaner.Tooltip>
+	
   <BulkLoadForTransporters.Settings.EnableContinuousLoading>启用“装载直到完成”指令</BulkLoadForTransporters.Settings.EnableContinuousLoading>
   <BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>增加一个右键指令，使殖民者在一个区域内连续执行装载运输工具的任务，直到所有任务完成。</BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>
   
@@ -63,7 +75,7 @@
   
   <BulkLoadForTransporters.Settings.OpportunityScanRadius>机会主义扫描半径 (格): {0}</BulkLoadForTransporters.Settings.OpportunityScanRadius>
   <BulkLoadForTransporters.Settings.OpportunityScanRadius.Unlimited>无限制</BulkLoadForTransporters.Settings.OpportunityScanRadius.Unlimited>
-  <BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>当搬运工的背包中有剩余物品时，他们会扫描多远范围内的运输仓装载机会？\n默认值：40。设置为最大以进行全地图扫描。</BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>当搬运工的背包中有剩余物品时，他们会扫描多远范围内的运输仓装载机会？\n默认值：90。设置为最大以进行全地图扫描。</BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>
   
   <BulkLoadForTransporters.Settings.PathfindingCandidates>路径规划精度与性能: {0}</BulkLoadForTransporters.Settings.PathfindingCandidates>
   <BulkLoadForTransporters.Settings.PathfindingCandidates.Tooltip>控制路径规划的精度与游戏性能之间的平衡。较高的值会规划出更智能的路线，但会消耗更多性能。\n\n1：殖民者只根据目标的直线距离来决定下一个拾取谁。\n\n2-6：殖民者会先根据直线距离找出N个最近的候选目标，然后只对这几个目标计算并比较实际的步行距离，从而找出真正的最优目标。\n\n默认值：3。</BulkLoadForTransporters.Settings.PathfindingCandidates.Tooltip>
@@ -78,5 +90,8 @@
   <BulkLoadForTransporters.Settings.AutoOpenTransporterContents.Tooltip>当您选中运输仓或穿梭机时，自动打开“内容”标签页。</BulkLoadForTransporters.Settings.AutoOpenTransporterContents.Tooltip>
   <BulkLoadForTransporters.Settings.AutoOpenCarrierGear>单击驮兽自动打开“装备”标签页</BulkLoadForTransporters.Settings.AutoOpenCarrierGear>
   <BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip>当您选中一个驮兽时，自动打开“装备”标签页以查看其库存。</BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip>
+
+  <BulkLoadForTransporters.Settings.ResetButton>重置为默认值</BulkLoadForTransporters.Settings.ResetButton>
+  <BulkLoadForTransporters.Settings.ResetConfirmDialog>您确定要将所有设置重置为默认值吗？</BulkLoadForTransporters.Settings.ResetConfirmDialog>
 
 </LanguageData>

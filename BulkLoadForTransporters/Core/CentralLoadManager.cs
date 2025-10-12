@@ -177,11 +177,11 @@ namespace BulkLoadForTransporters.Core
         /// </summary>
         /// <param name="task">The loading task to query.</param>
         /// <returns>A read-only dictionary mapping ThingDef to the available count for claiming.</returns>
-        public Dictionary<ThingDef, int> GetAvailableToClaim(IManagedLoadable task)
+        public Dictionary<ThingDef, int> GetAvailableToClaim(IManagedLoadable task, Pawn perspectivePawn)
         {
             var taskState = GetTaskState(task);
             if (taskState == null) return new Dictionary<ThingDef, int>(); // 返回空字典，安全
-            var available = taskState.GetAvailableToClaim();
+            var available = taskState.GetAvailableToClaim(perspectivePawn);
             DebugLogger.LogMessage(LogCategory.Manager, () => $"GetAvailableToClaim for task ID {task.GetUniqueLoadID()}: Returning {available.Count} defs. Example: {string.Join(", ", available.Take(3).Select(kvp => $"{kvp.Key.defName}x{kvp.Value}"))}");
             return available;
         }
@@ -192,9 +192,9 @@ namespace BulkLoadForTransporters.Core
         /// </summary>
         /// <param name="task">The loading task to check.</param>
         /// <returns>True if there are any items available to be claimed.</returns>
-        public bool HasWork(IManagedLoadable task)
+        public bool HasWork(IManagedLoadable task, Pawn perspectivePawn)
         {
-            return GetAvailableToClaim(task).Any(kvp => kvp.Value > 0);
+            return GetAvailableToClaim(task, perspectivePawn).Any(kvp => kvp.Value > 0);
         }
 
         /// <summary>
@@ -391,21 +391,58 @@ namespace BulkLoadForTransporters.Core
             /// <summary>
             /// Adds a pawn's claim to the task's state.
             /// </summary>
-            public void AddClaim(Pawn pawn, Dictionary<ThingDef, int> plan)
+            public void AddClaim(Pawn pawn, Dictionary<ThingDef, int> newPlan)
             {
-                if (!pawnClaims.TryGetValue(pawn, out var claims))
+                // 1. 获取该 pawn 已有的旧认领 (如果存在)
+                pawnClaims.TryGetValue(pawn, out var oldClaims);
+                oldClaims = oldClaims ?? new Dictionary<ThingDef, int>();
+
+                // 2. 计算需要更新的 ThingDef 的并集
+                var allDefsToUpdate = new HashSet<ThingDef>(oldClaims.Keys);
+                allDefsToUpdate.AddRange(newPlan.Keys);
+
+                // 3. 计算差值，并原子化地更新总认领 totalClaimed
+                foreach (var def in allDefsToUpdate)
                 {
-                    claims = new Dictionary<ThingDef, int>();
-                    pawnClaims[pawn] = claims;
+                    int oldValue = oldClaims.TryGetValue(def, 0);
+                    int newValue = newPlan.TryGetValue(def, 0);
+                    int delta = newValue - oldValue;
+
+                    if (delta != 0)
+                    {
+                        int currentTotal = totalClaimed.TryGetValue(def, 0);
+                        int newTotal = currentTotal + delta;
+
+                        if (newTotal > 0)
+                        {
+                            totalClaimed[def] = newTotal;
+                        }
+                        else
+                        {
+                            totalClaimed.Remove(def);
+                        }
+                    }
                 }
-                foreach (var kvp in plan)
+
+                // 4. 用新计划完全覆盖该 pawn 的个人认领记录
+                if (newPlan.Any())
                 {
-                    if (claims.ContainsKey(kvp.Key)) claims[kvp.Key] += kvp.Value;
-                    else claims[kvp.Key] = kvp.Value;
-                    if (totalClaimed.ContainsKey(kvp.Key)) totalClaimed[kvp.Key] += kvp.Value;
-                    else totalClaimed[kvp.Key] = kvp.Value;
+                    pawnClaims[pawn] = new Dictionary<ThingDef, int>(newPlan);
                 }
-                DebugLogger.LogMessage(LogCategory.Manager, () => $"  - Claim recorded. Total claimed for {plan.First().Key.defName} is now {totalClaimed.TryGetValue(plan.First().Key, 0)}.");
+                else
+                {
+                    pawnClaims.Remove(pawn);
+                }
+
+                if (newPlan.Any())
+                {
+                    var firstItem = newPlan.First();
+                    DebugLogger.LogMessage(LogCategory.Manager, () => $"  - Claim UPDATED for {pawn.LabelShort}. New plan: {string.Join(", ", newPlan.Select(kvp => $"{kvp.Key.defName}x{kvp.Value}"))}. Total claimed for {firstItem.Key.defName} is now {totalClaimed.TryGetValue(firstItem.Key, 0)}.");
+                }
+                else
+                {
+                    DebugLogger.LogMessage(LogCategory.Manager, () => $"  - Claim CLEARED for {pawn.LabelShort} due to empty new plan.");
+                }
             }
 
             /// <summary>
@@ -474,13 +511,38 @@ namespace BulkLoadForTransporters.Core
             /// <summary>
             /// Gets a snapshot of the currently available items to claim for this task.
             /// </summary>
-            public Dictionary<ThingDef, int> GetAvailableToClaim()
+            public Dictionary<ThingDef, int> GetAvailableToClaim(Pawn pawnToExclude = null)
             {
                 var available = new Dictionary<ThingDef, int>();
+
+                Dictionary<ThingDef, int> claimsByOthers;
+
+                if (pawnToExclude != null && pawnClaims.TryGetValue(pawnToExclude, out var excludedPawnClaims))
+                {
+                    // 如果需要排除某个 pawn，我们从总认领中减去他的部分
+                    claimsByOthers = new Dictionary<ThingDef, int>(totalClaimed);
+                    foreach (var claim in excludedPawnClaims)
+                    {
+                        if (claimsByOthers.ContainsKey(claim.Key))
+                        {
+                            claimsByOthers[claim.Key] -= claim.Value;
+                            if (claimsByOthers[claim.Key] <= 0)
+                            {
+                                claimsByOthers.Remove(claim.Key);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    claimsByOthers = totalClaimed;
+                }
+
+                // 计算使用“其他人的认领”
                 foreach (var kvp in totalNeeded)
                 {
-                    totalClaimed.TryGetValue(kvp.Key, out int claimedCount);
-                    int availableCount = kvp.Value - claimedCount;
+                    claimsByOthers.TryGetValue(kvp.Key, out int claimedByOthersCount);
+                    int availableCount = kvp.Value - claimedByOthersCount;
                     if (availableCount > 0)
                     {
                         available[kvp.Key] = availableCount;

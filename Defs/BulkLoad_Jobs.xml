@@ -23,6 +23,13 @@
     <suspendable>false</suspendable>
     <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
   </JobDef>
+
+  <JobDef>
+	<defName>DeliverToConstructionInBulk</defName>
+	<driverClass>BulkLoadForTransporters.Jobs.JobDriver_DeliverConstructionInBulk</driverClass>
+	<suspendable>false</suspendable>
+	<allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+  </JobDef>
     
 
 </Defs>

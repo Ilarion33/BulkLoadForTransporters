@@ -4,9 +4,11 @@
 using BulkLoadForTransporters.Core;
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
+using HarmonyLib;
 using RimWorld;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Verse;
 using Verse.AI;
 
@@ -19,7 +21,13 @@ namespace BulkLoadForTransporters.Jobs
     /// </summary>
     public abstract class JobDriver_BulkLoadBase : JobDriver, IBulkHaulState
     {
+        private static readonly FieldInfo CurToilIndexField = AccessTools.Field(typeof(JobDriver), "curToilIndex");
+
         #region Fields & State (from IBulkHaulState)
+
+        protected bool _pickupPhaseCompleted = false;
+        protected bool _handCollectionMode = false;
+
         // 记录最初从 Pick Up And Haul 的库存中“借用”的物品。
         private List<Thing> _thingsOriginallyFromPuah = new List<Thing>();
 
@@ -63,6 +71,22 @@ namespace BulkLoadForTransporters.Jobs
         public void TrackOriginalPuahItem(Thing t) { if (t != null && !_thingsOriginallyFromPuah.Contains(t)) _thingsOriginallyFromPuah.Add(t); }
         #endregion
 
+        /// <summary>
+        /// A protected utility to safely reset the internal Toil index of the JobDriver.
+        /// This is crucial for handling state inconsistencies during game loading.
+        /// </summary>
+        protected void ResetToilIndex()
+        {
+            if (CurToilIndexField != null)
+            {
+                CurToilIndexField.SetValue(this, -1);
+            }
+            else
+            {
+                Log.Error("[BulkLoad] Failed to reflect JobDriver.curToilIndex. State reset might fail.");
+            }
+        }
+
         #region Reusable Overrides & Finalizer
         /// <summary>
         /// Handles saving and loading the state of this JobDriver.
@@ -73,6 +97,8 @@ namespace BulkLoadForTransporters.Jobs
             Scribe_Collections.Look(ref _hauledThingsForThisJob, "hauledThingsForThisJob", LookMode.Reference);
             Scribe_Collections.Look(ref _surplusThings, "surplusThings", LookMode.Reference);
             Scribe_Collections.Look(ref _thingsOriginallyFromPuah, "thingsOriginallyFromPuah", LookMode.Reference);
+            Scribe_Values.Look(ref _pickupPhaseCompleted, "pickupPhaseCompleted", false);
+            Scribe_Values.Look(ref _handCollectionMode, "handCollectionMode", false);
         }
 
         /// <summary>
@@ -92,7 +118,7 @@ namespace BulkLoadForTransporters.Jobs
         /// The core cleanup logic that runs when the job ends for any reason (success, failure, interrupt).
         /// It ensures that any items remaining in the pawn's possession are correctly registered back with Pick Up And Haul.
         /// </summary>
-        protected void ReconcileStateWithPuah(JobCondition jobCondition)
+        public void ReconcileStateWithPuah(JobCondition jobCondition)
         {
             var puahComp = pawn.TryGetComp<PickUpAndHaul.CompHauledToInventory>();
             if (puahComp == null) return;
@@ -108,7 +134,7 @@ namespace BulkLoadForTransporters.Jobs
                                (pawn.inventory.innerContainer.Contains(thing) || pawn.carryTracker.CarriedThing == thing));
 
             // 调用通用的工具方法来执行注册
-            BulkLoad_Utility.RegisterHauledThingsWithPuah(pawn, allRemainingThings);
+            Global_Utility.RegisterHauledThingsWithPuah(pawn, allRemainingThings);
 
             HauledThings.Clear();
             SurplusThings.Clear();

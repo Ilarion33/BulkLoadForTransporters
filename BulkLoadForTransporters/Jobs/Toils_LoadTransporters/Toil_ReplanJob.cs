@@ -30,38 +30,39 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
             {
                 var pawn = toil.actor;
                 var job = pawn.CurJob;
-                DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is replanning job for '{loadable.GetParentThing().LabelCap}'.");
+                //DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is replanning job for '{loadable.GetParentThing().LabelCap}'.");
 
-                // 在重新规划前，清空任何可能存在的、由玩家手动添加的后续任务队列，确保我们的规划是权威的。
-                pawn.jobs.ClearQueuedJobs(false);
-                
-                CentralLoadManager.Instance?.RegisterOrUpdateTask(loadable);
+                //// 在重新规划前，清空任何可能存在的、由玩家手动添加的后续任务队列，确保我们的规划是权威的。
+                //pawn.jobs.ClearQueuedJobs(false);
 
-                if (BulkLoad_Utility.TryCreateUnloadFirstJob(pawn, loadable, out Job newUnloadJob))
-                {
-                    DebugLogger.LogMessage(LogCategory.Toils, () => "  - Opportunistic unload job found. Converting current job.");
-                    // 如果有，将当前Job转换为一个“仅卸货”Job。
-                    job.targetQueueA = newUnloadJob.targetQueueA;
-                    job.countQueue = newUnloadJob.countQueue;
-                    job.haulOpportunisticDuplicates = newUnloadJob.haulOpportunisticDuplicates;
-                }
-                else
-                {
-                    DebugLogger.LogMessage(LogCategory.Toils, () => "  - No opportunistic unload job. Proceeding with original pickup plan.");
-                    // 信任 WorkGiver 在不久前生成的计划。
-                    job.haulOpportunisticDuplicates = false;
-                }
+                //CentralLoadManager.Instance?.RegisterOrUpdateTask(loadable);
 
-                // 检查最终的计划是否有效
-                if (job.targetQueueA == null || !job.targetQueueA.Any())
-                {
-                    DebugLogger.LogMessage(LogCategory.Toils, () => "  - Final plan is empty. Ending job as Succeeded.");
-                    // 如果 WorkGiver 的计划因为时差而失效，或者卸货计划为空，则正常结束任务。
-                    pawn.jobs.EndCurrentJob(JobCondition.Succeeded, true);
-                    return;
-                }
+                //if (WorkGiver_Utility.TryCreateUnloadFirstJob(pawn, loadable, out Job newUnloadJob))
+                //{
+                //    DebugLogger.LogMessage(LogCategory.Toils, () => "  - Opportunistic unload job found. Converting current job.");
+                //    // 如果有，将当前Job转换为一个“仅卸货”Job。
+                //    job.targetQueueA = newUnloadJob.targetQueueA;
+                //    job.countQueue = newUnloadJob.countQueue;
+                //    job.haulOpportunisticDuplicates = newUnloadJob.haulOpportunisticDuplicates;
+                //}
+                //else
+                //{
+                //    DebugLogger.LogMessage(LogCategory.Toils, () => "  - No opportunistic unload job. Proceeding with original pickup plan.");
+                //    // 信任 WorkGiver 在不久前生成的计划。
+                //    job.haulOpportunisticDuplicates = false;
+                //}
 
-                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Final plan has {job.targetQueueA.Count} targets. Claiming items with Manager.");
+                //// 检查最终的计划是否有效
+                //if (job.targetQueueA == null || !job.targetQueueA.Any())
+                //{
+                //    DebugLogger.LogMessage(LogCategory.Toils, () => "  - Final plan is empty. Ending job as Succeeded.");
+                //    // 如果 WorkGiver 的计划因为时差而失效，或者卸货计划为空，则正常结束任务。
+                //    pawn.jobs.EndCurrentJob(JobCondition.Succeeded, true);
+                //    return;
+                //}
+
+                //DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Final plan has {job.targetQueueA.Count} targets. Claiming items with Manager.");
+
                 // 为最终确定的计划认领资源
                 CentralLoadManager.Instance?.ClaimItems(pawn, job, loadable);
 

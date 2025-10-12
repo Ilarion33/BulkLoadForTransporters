@@ -65,23 +65,34 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\Adapters\ConstructionGroupAdapter.cs" />
     <Compile Include="Core\Adapters\MapPortalAdapter.cs" />
+    <Compile Include="Core\Adapters\ConstructionSiteAdapter.cs" />
     <Compile Include="Core\CentralLoadManager.cs" />
     <Compile Include="Core\Components\CompBulkLoadable.cs" />
     <Compile Include="Core\Components\CompBulkLoadablePortal.cs" />
+    <Compile Include="Core\SoftlockCleaner.cs" />
     <Compile Include="Core\DefInjection.cs" />
     <Compile Include="Core\Interfaces\IManagedLoadable.cs" />
     <Compile Include="Core\JobDefRegistry.cs" />
     <Compile Include="Core\LoadingPlanner.cs" />
     <Compile Include="Core\BulkLoadForTransportersMod.cs" />
-    <Compile Include="Core\Utils\BulkLoad_Utility.cs" />
+    <Compile Include="Core\Utils\Compatibility_Utility.cs" />
+    <Compile Include="Core\Utils\Extensibility_Utility.cs" />
+    <Compile Include="Core\Utils\JobDriver_Utility.cs" />
+    <Compile Include="Core\Utils\Global_Utility.cs" />
     <Compile Include="Core\Interfaces\IBulkHaulState.cs" />
     <Compile Include="Core\Interfaces\ILoadable.cs" />
     <Compile Include="Core\Main.cs" />
     <Compile Include="Core\Adapters\LoadTransportersAdapter.cs" />
     <Compile Include="Core\Utils\DebugLogger.cs" />
     <Compile Include="Core\Utils\SafeUnloadManager.cs" />
-    <Compile Include="Core\Utils\LoadTransporters_WorkGiverUtility.cs" />
+    <Compile Include="Core\Utils\WorkGiver_Utility.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\CleanupJobCompletion_Patch.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\OptimisticHauling_Patches.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\JobChaining_PerceptionFilter_Patch.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\DeconstructForBlueprint_Disabler_Patch.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\WorkGiver_DeliverConstruction_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadPortal\EnterPortalUtility_ThingsBeingHauledTo_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadPortal\MapPortal_SubtractFromToLoadList_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadPortal\WorkGiver_LoadPortal_Patch.cs" />
@@ -102,9 +113,14 @@
     <Compile Include="HarmonyPatches\LoadTransporters\FloatMenuOption_LoadTransporters_Patch.cs" />
     <Compile Include="HarmonyPatches\UnloadCarriers\FloatMenuOption_UnloadCarriers_Patch.cs" />
     <Compile Include="HarmonyPatches\UnloadCarriers\WorkGiver_UnloadCarriers_Patch.cs" />
+    <Compile Include="Jobs\JobDriver_DeliverConstructionInBulk.cs" />
     <Compile Include="Jobs\JobDriver_BulkLoadBase.cs" />
     <Compile Include="Jobs\JobDriver_LoadPortalInBulk.cs" />
     <Compile Include="Jobs\JobDriver_UnloadPackAnimalInBulk.cs" />
+    <Compile Include="Jobs\Toils_DeliverConstruction\Toil_BeginUnloadSessionForConstruction.cs" />
+    <Compile Include="Jobs\Toils_DeliverConstruction\Toil_ClearSiteIfNecessary.cs" />
+    <Compile Include="Jobs\Toils_DeliverConstruction\Toil_DepositItemForConstruction.cs" />
+    <Compile Include="Jobs\Toils_DeliverConstruction\Toil_EndUnloadSessionForConstruction.cs" />
     <Compile Include="Jobs\Toils_LoadPortal\Toil_BeginUnloadSession.cs" />
     <Compile Include="Jobs\Toils_LoadPortal\Toil_DepositItemForPortal.cs" />
     <Compile Include="Jobs\Toils_LoadTransporters\Toil_BeginUnloadSessionForTransporters.cs" />
@@ -130,7 +146,6 @@
     <Content Include="Defs\BulkLoad_Jobs.xml" />
     <Content Include="Languages\ChineseSimplified\Keyed\BulkLoad_Keys.xml" />
     <Content Include="Languages\English\Keyed\BulkLoad_Keys.xml" />
-    <Content Include="LoadFolders.xml" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

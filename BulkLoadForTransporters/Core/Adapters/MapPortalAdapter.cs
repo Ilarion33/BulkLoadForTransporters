@@ -91,5 +91,7 @@ namespace BulkLoadForTransporters.Core.Adapters
             // MapPortal 没有质量使用的概念。
             return 0f;
         }
+
+        public bool HandlesAbstractDemands => false;
     }
 }

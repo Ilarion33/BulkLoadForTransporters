@@ -7,6 +7,7 @@ using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
 using BulkLoadForTransporters.Toils_LoadTransporters;
 using RimWorld;
+using System;
 using System.Collections.Generic;
 using Verse;
 using Verse.AI;
@@ -41,6 +42,12 @@ namespace BulkLoadForTransporters.Jobs
         /// </summary>
         protected override IEnumerable<Toil> MakeNewToils()
         {
+            if (pawn.Map == null)
+            {
+                this.ResetToilIndex();
+                yield break;
+            }
+
             // NOTE: 这是保证任务在任何情况下（成功、失败、中断）都能安全结束的关键，
             // 它负责将所有状态与Pick Up And Haul同步。
             this.AddFinishAction(jobCondition => this.ReconcileStateWithPuah(jobCondition));
@@ -58,11 +65,14 @@ namespace BulkLoadForTransporters.Jobs
             // 注册周期性的“巡航修正”检查。
             // 这个FailOn负责在小人行进途中，持续验证当前目标是否仍然有效。
             this.FailOn(() => {
-                if (pawn.IsHashIntervalTick(LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Settings>().AiUpdateFrequency))
+                if (pawn.pather.Moving && (_pickupPhaseCompleted || job.haulOpportunisticDuplicates))
                 {
-                    if (!BulkLoad_Utility.ValidateAndRedirectCurrentTarget(this))
+                    if (pawn.IsHashIntervalTick(LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Settings>().AiUpdateFrequency))
                     {
-                        return true;
+                        if (!JobDriver_Utility.ValidateAndRedirectCurrentTarget(this))
+                        {
+                            return true; // 验证失败，终止 Job
+                        }
                     }
                 }
                 return false;
@@ -75,6 +85,7 @@ namespace BulkLoadForTransporters.Jobs
             Toil pickupPhase = ToilMaker.MakeToil("PickupPhase");
             Toil unloadOnlyPhase = ToilMaker.MakeToil("UnloadOnlyPhase");
             Toil afterPickupPhase = ToilMaker.MakeToil("AfterPickupPhase");
+            afterPickupPhase.AddPreInitAction(() => this._pickupPhaseCompleted = true);
 
             yield return Toils_Jump.JumpIf(unloadOnlyPhase, () => job.haulOpportunisticDuplicates);
 
@@ -83,42 +94,57 @@ namespace BulkLoadForTransporters.Jobs
             // =========================================================================
             yield return pickupPhase;
 
+            this._handCollectionMode = false;
             Toil pickupLoopStart = ToilMaker.MakeToil("PickupLoopStart");
 
             yield return pickupLoopStart;
-            // 如果队列为空，直接跳转到拾取结束
             yield return Toils_Jump.JumpIf(afterPickupPhase, () => job.targetQueueA.NullOrEmpty());
 
             yield return Toils_JobTransforms.ExtractNextTargetFromQueue(TargetIndex.A);
 
-            // --- 1a. 走向目标 (智能的) ---
-            yield return Toil_GotoHaulable.Create(TargetIndex.A, managedLoadable, this, pickupLoopStart);
+            // --- 1a. 信使识别 ---
+            Toil messengerCheck = ToilMaker.MakeToil("MessengerCheck");
+            messengerCheck.initAction = () =>
+            {
+                if (this.TargetThingA == this.pawn)
+                {
+                    this._handCollectionMode = true;
+                }
+            };
+            messengerCheck.defaultCompleteMode = ToilCompleteMode.Instant;
+            yield return messengerCheck;
+            // 如果是信使，它已经被处理，并且 TargetThingA 是 pawn，直接跳回循环开始
+            yield return Toils_Jump.JumpIf(pickupLoopStart, () => this.TargetThingA == this.pawn);
 
-            // --- 1b. 如果物品在容器里，先把它“丢”出来 ---
+
+            // --- 从这里开始，TargetThingA 保证是一个真实的目标 ---
+
+            // --- 1b. 走向与准备 ---
+            yield return Toil_GotoHaulable.Create(TargetIndex.A, managedLoadable, this, pickupLoopStart);
             Toil takeFromGround = ToilMaker.MakeToil("TakeFromGround");
             yield return Toils_Jump.JumpIf(takeFromGround, () => this.TargetThingA.Spawned);
             yield return Toil_DropAndTakeFromContainer.Create(TargetIndex.A, false, this);
-
-            // --- 1c. 把现在肯定在地上的物品拿到身上 ---
             yield return takeFromGround;
 
-            Toil takeToCarry = ToilMaker.MakeToil("TakeToCarry");
+            // --- 1c. 动态决策 ---
+            Toil takeToCarryUpgraded = Toil_TakeToCarry.Create(TargetIndex.A, this);
             Toil afterTake = ToilMaker.MakeToil("AfterTake");
 
-            // 如果只剩这最后一个目标，就计划拿到手上
-            yield return Toils_Jump.JumpIf(takeToCarry, () => job.targetQueueA.Count == 0);
+            // 条件：处于手持模式，或者是最后一个目标
+            var shouldTakeToCarry = new Func<bool>(() => this._handCollectionMode || job.targetQueueA.Count == 0);
 
-            // 放入背包
+            // 如果条件不满足，则跳转到“放背包”的 Toil
+            yield return Toils_Jump.JumpIf(takeToCarryUpgraded, shouldTakeToCarry);
+
+            // “放背包”分支
             yield return Toil_TakeToInventory.Create(TargetIndex.A, this, managedLoadable);
-            yield return Toils_Jump.Jump(afterTake);
+            yield return Toils_Jump.Jump(afterTake); // 完成后跳到结尾
 
-            // 放入手上
-            yield return takeToCarry;
-            yield return Toil_TakeToCarry.Create(TargetIndex.A, this);
+            // “拿手上”分支
+            yield return takeToCarryUpgraded;
 
+            // --- 1d. 汇合点与循环 ---
             yield return afterTake;
-
-            // --- 1d. 回到循环开始 ---
             yield return Toils_Jump.Jump(pickupLoopStart);
 
             // =========================================================================
@@ -135,7 +161,7 @@ namespace BulkLoadForTransporters.Jobs
             // =========================================================================
             Toil gotoToil = Toils_Goto.GotoThing(TargetIndex.B, PathEndMode.Touch);
             gotoToil.AddPreInitAction(() => {
-                BulkLoad_Utility.ValidateAndRedirectCurrentTarget(this);
+                JobDriver_Utility.ValidateAndRedirectCurrentTarget(this);
             });
             yield return gotoToil;
 

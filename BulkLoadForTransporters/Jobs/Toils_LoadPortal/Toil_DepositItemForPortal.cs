@@ -63,13 +63,13 @@ namespace BulkLoadForTransporters.Toils_LoadPortal
                 // 与 Toil_DepositItem 保持一致，我们也考虑会话状态中的剩余需求
                 var transferables = driver._unloadTransferables;
                 var remainingNeeds = driver._unloadRemainingNeeds;
-                int needed = BulkLoad_Utility.ResolveNeededAmountForUnload(carriedThing, transferables, remainingNeeds);
+                int needed = JobDriver_Utility.ResolveNeededAmountForUnload(carriedThing, transferables, remainingNeeds);
                 int amountToDeposit = Mathf.Min(carriedThing.stackCount, needed);
 
                 DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Carried: {carriedThing.LabelCap} (x{carriedThing.stackCount}). Needed: {needed}. Will deposit: {amountToDeposit}.");
                 if (amountToDeposit > 0)
                 {
-                    BulkLoad_Utility.IsExecutingManagedUnload = true;
+                    Global_Utility.IsExecutingManagedUnload = true;
                     try
                     {
                         // 在物品被传送（并可能被销毁）之前，安全地记录其核心信息。
@@ -89,8 +89,18 @@ namespace BulkLoadForTransporters.Toils_LoadPortal
                     }
                     finally
                     {
-                        BulkLoad_Utility.IsExecutingManagedUnload = false;
+                        Global_Utility.IsExecutingManagedUnload = false;
                     }
+                }
+
+                // 检查卸货后手上是否还有剩余物品（溢出物）。
+                var surplus = pawn.carryTracker.CarriedThing;
+                if (surplus != null)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Surplus detected: {surplus.LabelCap} (x{surplus.stackCount}). Dropping on ground.");
+
+                    // 无论任何原因，只要有剩余，就全部丢在地上。
+                    pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out Thing _);
                 }
             };
             depositToil.defaultCompleteMode = ToilCompleteMode.Instant;

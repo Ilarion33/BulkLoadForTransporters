@@ -1,8 +1,10 @@
 ﻿// Copyright (c) 2025 Ilarion. All rights reserved.
 //
 // Core/BulkLoadForTransportersMod.cs
+using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace BulkLoadForTransporters.Core
 {
@@ -26,7 +28,9 @@ namespace BulkLoadForTransporters.Core
 
         private readonly Settings settings;
 
-        private Vector2 scrollPosition = Vector2.zero;
+        private Vector2 _scrollPosition;
+
+        private float _lastCalculatedHeight = 0f;
 
         public BulkLoadForTransportersMod(ModContentPack content) : base(content)
         {
@@ -43,24 +47,33 @@ namespace BulkLoadForTransporters.Core
             mainRect.yMax -= 40f;
 
             // 定义一个逻辑上的“画布”，其高度需要足够大以容纳所有内容，从而激活滚动条。
-            Rect contentRect = new Rect(0f, 0f, mainRect.width - 8f, 870f); 
+            Rect viewRect = new Rect(0f, 0f, inRect.width - 28f, _lastCalculatedHeight > 0 ? _lastCalculatedHeight : 9999f);
 
             Listing_Standard listingStandard = new Listing_Standard();
 
-            Widgets.BeginScrollView(mainRect, ref this.scrollPosition, contentRect, false);
+            Widgets.BeginScrollView(inRect, ref _scrollPosition, viewRect);
 
-            listingStandard.Begin(contentRect);
+            listingStandard.Begin(new Rect(0, 0, inRect.width - 28f, 9999f));
 
             GameFont originalFont = Text.Font;
             listingStandard.Gap(8f);
-
             
 
 
             // --- 通用设置模块 ---
-            Text.Font = GameFont.Medium;
-            listingStandard.Label("BulkLoadForTransporters.Settings.Header.General".Translate());
-            Text.Font = originalFont;
+            Color originalColor_A = GUI.color;
+            try
+            {
+                GUI.color = Color.yellow;
+
+                Text.Font = GameFont.Medium;
+                listingStandard.Label("BulkLoadForTransporters.Settings.Header.General".Translate());
+                Text.Font = originalFont;
+            }
+            finally
+            {
+                GUI.color = originalColor_A;
+            }
 
             listingStandard.Gap(8f);
 
@@ -68,6 +81,18 @@ namespace BulkLoadForTransporters.Core
             listingStandard.CheckboxLabeled("BulkLoadForTransporters.Settings.CleanupOnSave".Translate(),
                                             ref settings.cleanupOnSave,
                                             "BulkLoadForTransporters.Settings.CleanupOnSave.Tooltip".Translate());
+
+            listingStandard.Gap(8f);
+
+            listingStandard.CheckboxLabeled("BulkLoadForTransporters.Settings.EnableSoftlockCleaner".Translate(),
+                                            ref settings.enableSoftlockCleaner,
+                                            "BulkLoadForTransporters.Settings.EnableSoftlockCleaner.Tooltip".Translate());
+
+            listingStandard.Gap(8f);
+
+            listingStandard.CheckboxLabeled("BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass".Translate(),
+                                            ref settings.cheatIgnoreInventoryMass,
+                                            "BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip".Translate());
 
             listingStandard.Gap(8f);
 
@@ -89,10 +114,19 @@ namespace BulkLoadForTransporters.Core
             listingStandard.Gap(8f);
 
             // 调试设置模块
-            Text.Font = Prefs.DevMode ? GameFont.Medium : GameFont.Small;
-            listingStandard.Label("BulkLoadForTransporters.Settings.Header.Debug".Translate(), -1f,
-                                  new TipSignal("BulkLoadForTransporters.Settings.Header.Debug.Tooltip".Translate()));
-            Text.Font = originalFont;
+            Color originalColor_B = GUI.color;
+            try
+            {
+                GUI.color = Prefs.DevMode ? Color.yellow : Color.gray;
+                Text.Font = Prefs.DevMode ? GameFont.Medium : GameFont.Small;
+                listingStandard.Label("BulkLoadForTransporters.Settings.Header.Debug".Translate(), -1f,
+                                      new TipSignal("BulkLoadForTransporters.Settings.Header.Debug.Tooltip".Translate()));
+                Text.Font = originalFont;
+            }
+            finally
+            {
+                GUI.color = originalColor_B;
+            }
 
             // 只有在开发者模式下才显示详细选项
             if (Prefs.DevMode)
@@ -122,6 +156,41 @@ namespace BulkLoadForTransporters.Core
 
 
             listingStandard.Gap(28f);
+
+
+            // --- 批量搬砖模块 ---
+            DrawFeatureHeader(listingStandard,
+                "BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery".Translate(),
+                ref settings.enableBulkConstructionDelivery,
+                "BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip".Translate());
+
+            if (settings.enableBulkConstructionDelivery)
+            {
+                listingStandard.Gap(8f);
+                                
+                // --- 地块分组大小设置 ---
+                listingStandard.Label(
+                    "BulkLoadForTransporters.Settings.ConstructionGroupingGridSize".Translate(settings.constructionGroupingGridSize),
+                    -1f,
+                    "BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip".Translate());
+                settings.constructionGroupingGridSize = (int)listingStandard.Slider(settings.constructionGroupingGridSize, 16, 128);
+                listingStandard.Gap(8f);
+
+                // --- 接力扫描半径设置 ---
+                string chainRadiusValue = (settings.constructionChainScanRadius <= 1f)
+                    ? "BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled".Translate().ToString()
+                    : settings.constructionChainScanRadius.ToString("F0");
+                listingStandard.Label(
+                    "BulkLoadForTransporters.Settings.ConstructionChainScanRadius".Translate(chainRadiusValue),
+                    -1f,
+                    "BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip".Translate());
+                settings.constructionChainScanRadius = (int)listingStandard.Slider(settings.constructionChainScanRadius, 1f, 60f);
+
+            }
+
+
+
+            listingStandard.Gap(8f);
 
             // --- 批量装载模块 ---
             DrawFeatureHeader(listingStandard,
@@ -154,19 +223,9 @@ namespace BulkLoadForTransporters.Core
                 ref settings.enableBulkLoadPortal,
                 "BulkLoadForTransporters.Settings.Header.BulkLoadPortal.Tooltip".Translate());
 
-            // --- 条件性地绘制载具模块设置 ---
-            if (IsVehicleFrameworkLoaded)
-            {
-                listingStandard.Gap(8f);
+            
 
-                DrawFeatureHeader(listingStandard,
-                    "BulkLoadForTransporters.Settings.Header.BulkLoadVehicle".Translate(),
-                    ref settings.enableBulkLoadVehicles,
-                    "BulkLoadForTransporters.Settings.Header.BulkLoadVehicle.Tooltip".Translate());
-            }
-
-
-            if (settings.enableBulkLoadTransporters || settings.enableBulkLoadPortal || (IsVehicleFrameworkLoaded && settings.enableBulkLoadVehicles))
+            if (settings.enableBulkLoadTransporters || settings.enableBulkLoadPortal || settings.enableBulkConstructionDelivery)
             {                        
 
                 listingStandard.Gap(8f);
@@ -178,7 +237,7 @@ namespace BulkLoadForTransporters.Core
                     : settings.opportunityScanRadius.ToString("F0");
                 listingStandard.Label("BulkLoadForTransporters.Settings.OpportunityScanRadius".Translate(radiusValue), -1f,
                                       "BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip".Translate());
-                settings.opportunityScanRadius = listingStandard.Slider(settings.opportunityScanRadius, 10f, 150f);
+                settings.opportunityScanRadius = listingStandard.Slider(settings.opportunityScanRadius, 30f, 150f);
 
                 listingStandard.Gap(8f); 
 
@@ -223,8 +282,29 @@ namespace BulkLoadForTransporters.Core
                 settings.minFreeSpaceToUnloadCarrierPct = listingStandard.Slider(settings.minFreeSpaceToUnloadCarrierPct, 0.1f, 0.9f);
                                 
             }
+            listingStandard.Gap(8f);
 
-            
+            float buttonWidth = 130f;
+            float buttonHeight = 30f;
+            Rect buttonRect = listingStandard.GetRect(buttonHeight);
+            buttonRect.x = (listingStandard.ColumnWidth - buttonWidth) / 2;
+            buttonRect.width = buttonWidth;
+
+            if (listingStandard.ButtonText("BulkLoadForTransporters.Settings.ResetButton".Translate()))
+            {
+                Find.WindowStack.Add(new Dialog_MessageBox(
+                    "BulkLoadForTransporters.Settings.ResetConfirmDialog".Translate(),
+                    "Confirm".Translate(),
+                    () => {
+                        settings.Reset();
+                        SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera();
+                    },
+                    "Cancel".Translate(),null,null,true,null,null));
+            }
+            listingStandard.Gap(48f);
+
+
+            _lastCalculatedHeight = listingStandard.CurHeight;
 
             listingStandard.End();
 
@@ -245,10 +325,28 @@ namespace BulkLoadForTransporters.Core
         private void DrawFeatureHeader(Listing_Standard listing, TaggedString label, ref bool isEnabled, TaggedString tooltip)
         {
             GameFont originalFont = Text.Font;
+            Color originalColor = GUI.color;
 
-            Text.Font = isEnabled ? GameFont.Medium : GameFont.Small;
-            listing.CheckboxLabeled(label, ref isEnabled, tooltip);
-            Text.Font = originalFont;
+            try
+            {
+                if (isEnabled)
+                {
+                    Text.Font = GameFont.Medium;
+                    GUI.color = Color.yellow;
+                }
+                else
+                {
+                    Text.Font = GameFont.Small;
+                    GUI.color = Color.gray;
+                }
+
+                listing.CheckboxLabeled(label, ref isEnabled, tooltip);
+            }
+            finally
+            {
+                Text.Font = originalFont;
+                GUI.color = originalColor;
+            }
         }
     }
 }

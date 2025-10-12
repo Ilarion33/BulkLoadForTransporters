@@ -55,7 +55,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
             IManagedLoadable loadable = new LoadTransportersAdapter(anyTransporterInGroup);
 
             // 条件1: 对于 pawn 自己来说，是否还有能做的活？
-            bool pawnCanWork = LoadTransporters_WorkGiverUtility.HasPotentialBulkWork(pawn, loadable);
+            bool pawnCanWork = WorkGiver_Utility.HasPotentialBulkWork(pawn, loadable);
 
             // 条件2: 对于整个任务来说，是否还有其他人在途？
             bool anyClaimsInProgress = CentralLoadManager.Instance.AnyClaimsInProgress(loadable);

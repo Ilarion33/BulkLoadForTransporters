@@ -36,7 +36,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadPortal
         public static bool Prefix(MapPortal __instance, Thing t, int count)
         {
             // 这是一个信号旗检查。只有我们自己的卸货Toil会将此标志设为true。
-            if (!BulkLoad_Utility.IsExecutingManagedUnload)
+            if (!Global_Utility.IsExecutingManagedUnload)
             {
                 return true;
             }
@@ -48,7 +48,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadPortal
             }
 
             // 使用我们自己实现的、更可靠的匹配算法来找到正确的记账条目。
-            var bestMatch = BulkLoad_Utility.FindBestMatchFor(t, leftToLoad);
+            var bestMatch = Global_Utility.FindBestMatchFor(t, leftToLoad);
 
             if (bestMatch == null)
             {

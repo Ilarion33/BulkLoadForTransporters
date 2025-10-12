@@ -109,7 +109,7 @@ namespace BulkLoadForTransporters.Core.Components
 
             CentralLoadManager.Instance.RegisterOrUpdateTask(groupLoadable);
 
-            bool hasWorkToDo = CentralLoadManager.Instance.HasWork(groupLoadable) || BulkLoad_Utility.PawnHasNeededPuahItems(pawn, groupLoadable);
+            bool hasWorkToDo = CentralLoadManager.Instance.HasWork(groupLoadable, pawn) || WorkGiver_Utility.PawnHasNeededPuahItems(pawn, groupLoadable);
             if (!hasWorkToDo)
             {
                 DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO: Manager reports no work to do, and pawn has no relevant items in inventory.");
@@ -117,7 +117,7 @@ namespace BulkLoadForTransporters.Core.Components
             }
 
             var remainingTransferables = groupLoadable.GetTransferables();
-            var availableToClaim = CentralLoadManager.Instance.GetAvailableToClaim(groupLoadable);
+            var availableToClaim = CentralLoadManager.Instance.GetAvailableToClaim(groupLoadable, pawn);
             bool anyHaulableWorkLeft = false;
             if (remainingTransferables != null)
             {
@@ -125,7 +125,7 @@ namespace BulkLoadForTransporters.Core.Components
                 {
                     if (transferable.CountToTransfer > 0 && transferable.HasAnyThing && availableToClaim.ContainsKey(transferable.ThingDef))
                     {
-                        if (transferable.AnyThing is Pawn p && !LoadTransporters_WorkGiverUtility.NeedsToBeCarried(p))
+                        if (transferable.AnyThing is Pawn p && !Global_Utility.NeedsToBeCarried(p))
                         {
                             continue;
                         }
@@ -134,7 +134,7 @@ namespace BulkLoadForTransporters.Core.Components
                     }
                 }
             }
-            if (BulkLoad_Utility.PawnHasNeededPuahItems(pawn, groupLoadable))
+            if (WorkGiver_Utility.PawnHasNeededPuahItems(pawn, groupLoadable))
             {
                 anyHaulableWorkLeft = true;
             }
@@ -153,7 +153,7 @@ namespace BulkLoadForTransporters.Core.Components
                     var puahComp = pawn.TryGetComp<CompHauledToInventory>();
                     if (puahComp != null && puahComp.GetHashSet().Any())
                     {
-                        if (!BulkLoad_Utility.TryCreateDirectedUnloadJob(pawn, groupLoadable, out _))
+                        if (!WorkGiver_Utility.TryCreateDirectedUnloadJob(pawn, groupLoadable, out _))
                         {
                             foreach (var thing in puahComp.GetHashSet().ToList())
                             {
@@ -162,7 +162,7 @@ namespace BulkLoadForTransporters.Core.Components
                         }
                     }
 
-                    if (LoadTransporters_WorkGiverUtility.TryGiveBulkJob(pawn, groupLoadable, out Job job) && job.def != JobDefOf.Wait)
+                    if (WorkGiver_Utility.TryGiveBulkJob(pawn, groupLoadable, out Job job) && job.def != JobDefOf.Wait)
                     {
                         pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
                     }

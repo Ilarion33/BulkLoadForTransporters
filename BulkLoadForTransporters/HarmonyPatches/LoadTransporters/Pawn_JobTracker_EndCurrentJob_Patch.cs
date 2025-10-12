@@ -8,6 +8,7 @@ using BulkLoadForTransporters.Jobs;
 using HarmonyLib;
 using PickUpAndHaul;
 using RimWorld;
+using System.Linq;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -33,10 +34,22 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
             {
                 return;
             }
-            DebugLogger.LogMessage(LogCategory.Manager, () => $"EndCurrentJob_Patch triggered for {___pawn.LabelShort}. Job: {jobToEnd.def.defName}, Condition: {condition}.");
 
-            // 无论Job因何结束（成功、失败、中断），都必须释放认领，确保任务状态的最终一致性。
-            CentralLoadManager.Instance?.ReleaseClaimsForPawn(___pawn);
+            // 检查是否有排队的 Job，并且这个 Job 是我们的“清理信使”
+            var queuedJob = ___pawn.jobs.jobQueue.FirstOrDefault();
+            if (queuedJob != null && queuedJob.job.loadID == JobDriver_Utility.CleanupJobLoadID)
+            {
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"EndCurrentJob_Patch: Next job is a cleanup task ({queuedJob.job.def.defName}). RETAINING claims for {___pawn.LabelShort}.");
+            }
+            else if (queuedJob != null && queuedJob.job.def == jobToEnd.def)
+            {
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"[EndCurrentJob Patch] RETAINING claims for {___pawn.LabelShort}. Reason: Chaining to a job of the same type ('{jobToEnd.def.defName}').");
+            }
+            else
+            {
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"[EndCurrentJob Patch] RELEASING claims for {___pawn.LabelShort}. Job: {jobToEnd.def.defName}, Condition: {condition}. No retain condition met.");
+                CentralLoadManager.Instance?.ReleaseClaimsForPawn(___pawn);
+            }
 
             // 以下逻辑只在Job被“中断”时执行，这是为了处理非预期的状态。
             if (condition != JobCondition.Succeeded)
@@ -64,12 +77,9 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
                     return;
                 }
 
-                // 检查背包剩余负重，决定能将多少手持物品安全地放回背包。
-                float availableMass = MassUtility.FreeSpace(___pawn);
-                float massPerItem = carriedThing.GetStatValue(StatDefOf.Mass);
-                int countToStore = (availableMass > 0 && massPerItem > 0) ? Mathf.FloorToInt(availableMass / massPerItem) : 0;
-                countToStore = Mathf.Min(carriedThing.stackCount, countToStore);
-                DebugLogger.LogMessage(LogCategory.Manager, () => $"    - Salvaging {carriedThing.LabelCap}. Can store {countToStore}/{carriedThing.stackCount} in backpack.");
+                int countToStore = Global_Utility.CalculateSurplusToStoreInInventory(___pawn, carriedThing);
+
+                DebugLogger.LogMessage(LogCategory.Manager, () => $"    - Salvaging {carriedThing.LabelCap}. Can store {countToStore}/{carriedThing.stackCount} in backpack (Cheat mode: {LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Core.Settings>().cheatIgnoreInventoryMass}).");
 
                 if (countToStore > 0)
                 {

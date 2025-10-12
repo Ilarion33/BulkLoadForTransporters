@@ -146,6 +146,8 @@ namespace BulkLoadForTransporters.Core
             // 构建一次性的、预先过滤的供应品索引
             var supplyIndex = new Dictionary<ThingDef, List<Thing>>();
 
+            bool isAbstract = (loadable is IManagedLoadable managed) && managed.HandlesAbstractDemands;
+
             // 将所有明确的需求物品预先计算到一个HashSet中。
             var allExplicitlyDemandedThings = new HashSet<Thing>(sandboxTransferables.SelectMany(tr => tr.things));
 
@@ -155,15 +157,16 @@ namespace BulkLoadForTransporters.Core
                 if (thing == null || (thing is Pawn && !(thing is Corpse))) continue;
                 if (!allNeededDefs.Contains(thing.def)) continue;
 
-                // 条件 B: 物品是任务清单上明确指定的实例吗？
+                // 条件 B (VIP 通道 #1): 物品是任务清单上明确指定的实例吗？
                 bool isExplicitlyDemanded = allExplicitlyDemandedThings.Contains(thing);
-                // 条件 A: 物品是“殖民地资产”吗？
-                bool isColonyAsset = BulkLoad_Utility.IsValidColonyAsset(thing, pawn);
 
-                if (isExplicitlyDemanded || isColonyAsset)
+                // 条件 A: 物品是“殖民地资产”吗？
+                bool isColonyAsset = Global_Utility.IsValidColonyAsset(thing, pawn);
+
+                if (!thing.IsForbidden(pawn) && (isExplicitlyDemanded || isAbstract || isColonyAsset))
                 {
                     // 只有当物品符合任一条件时，才进行昂贵的可达性检查。
-                    if (pawn.CanReserveAndReach(thing, PathEndMode.ClosestTouch, Danger.Deadly))
+                    if (HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false))
                     {
                         if (!supplyIndex.TryGetValue(thing.def, out var list))
                         {
@@ -181,9 +184,9 @@ namespace BulkLoadForTransporters.Core
                 if (livePawn == null) continue;
                 if (!allNeededDefs.Contains(livePawn.def)) continue;
 
-                if (allExplicitlyDemandedThings.Contains(livePawn) || BulkLoad_Utility.IsValidColonyAsset(livePawn, pawn))
+                if (allExplicitlyDemandedThings.Contains(livePawn) || Global_Utility.IsValidColonyAsset(livePawn, pawn))
                 {
-                    if (pawn.CanReserveAndReach(livePawn, PathEndMode.ClosestTouch, Danger.Deadly))
+                    if (HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, livePawn, false))
                     {
                         if (!supplyIndex.TryGetValue(livePawn.def, out var list))
                         {
@@ -351,7 +354,7 @@ namespace BulkLoadForTransporters.Core
                     foreach (var source in sources)
                     {
                         // --- 1. 顶层过滤器: 该 source 是否应该被考虑 ---
-                        if (source is Pawn p && !LoadTransporters_WorkGiverUtility.NeedsToBeCarried(p))
+                        if (source is Pawn p && !Global_Utility.NeedsToBeCarried(p))
                         {
                             continue;
                         }
@@ -367,7 +370,7 @@ namespace BulkLoadForTransporters.Core
                                 isIdeal = true;
                             }
                         }
-                        else if (BulkLoad_Utility.IsFungible(demand.AnyThing))
+                        else if (Global_Utility.IsFungible(demand.AnyThing))
                         {
                             isIdeal = true;
                         }
@@ -377,7 +380,7 @@ namespace BulkLoadForTransporters.Core
                             {
                                 isIdeal = true;
                             }
-                            else if (BulkLoad_Utility.FindBestMatchFor(source, new List<TransferableOneWay> { demand }) != null)
+                            else if (Global_Utility.FindBestMatchFor(source, new List<TransferableOneWay> { demand }) != null)
                             {
                                 isAlternative = true;
                             }
@@ -386,14 +389,14 @@ namespace BulkLoadForTransporters.Core
                         // --- 3. 分配: 根据“身份”和“物理属性”将 source 放入正确的桶 ---
                         if (isIdeal)
                         {
-                            if (BulkLoad_Utility.IsUnbackpackable(source))
+                            if (Global_Utility.IsUnbackpackable(source))
                                 unbackpackableSourcesByDemand[demand].Add(source);
                             else
                                 analysis.IdealSources.Add(source);
                         }
                         else if (isAlternative)
                         {
-                            if (!BulkLoad_Utility.IsUnbackpackable(source))
+                            if (!Global_Utility.IsUnbackpackable(source))
                             {
                                 analysis.AlternativeSources.Add(source);
                             }
@@ -589,7 +592,7 @@ namespace BulkLoadForTransporters.Core
                     foreach (var source in kvp.Value.Where(s => remainingStackCounts.ContainsKey(s) && remainingStackCounts[s] > 0))
                     {
                         // 双重保险：再次确认这个Pawn不是自主登船者
-                        if (source is Pawn p && !LoadTransporters_WorkGiverUtility.NeedsToBeCarried(p)) continue;
+                        if (source is Pawn p && !Global_Utility.NeedsToBeCarried(p)) continue;
                         candidatePool.Add(new HaulCandidate { Demand = kvp.Key, Source = source });
                     }
                 }
@@ -598,42 +601,127 @@ namespace BulkLoadForTransporters.Core
 
                 if (candidatePool.Any())
                 {
-                    HaulCandidate bestChoice = FindBestChoiceFromCandidates(pawn, candidatePool, pathingBudgetUsed, settings.pathfindingHeuristicCandidates, pathingOrigin);
+                    // --- “贪婪循环” ---
 
-                    if (bestChoice != null)
+                    // 用于临时存放“手持”阶段规划的所有拾取项
+                    var handheldHaulList = new List<KeyValuePair<Thing, int>>();
+                    bool hasStartedGreedyLoop = false;
+
+                    // “手持”阶段的总拾取数量，用于与 stackLimit 和 totalNeed 比较
+                    int currentHandheldCount = 0;
+                    ThingDef handheldThingDef = null;
+                    int handheldStackLimit = 1;
+                    int totalNeedForHandheldType = 0;
+
+                    while (true) // 这是受控循环，内部有 break
                     {
-                        DebugLogger.LogMessage(LogCategory.Planner, () => $"    - Best handheld choice is: {bestChoice.Source.LabelCap} from {bestChoice.Source.Position}.");
-                        int needed;
+                        HaulCandidate bestChoice = FindBestChoiceFromCandidates(pawn, candidatePool, pathingBudgetUsed, settings.pathfindingHeuristicCandidates, pathingOrigin);
 
-                        if (BulkLoad_Utility.IsUnbackpackable(bestChoice.Source))
+                        // --- 预算消耗逻辑 ---
+                        if (settings.pathfindingHeuristicCandidates > 1 && pathingBudgetUsed < settings.pathfindingHeuristicCandidates)
                         {
-                            // --- 对于不可入包物品 (如Pawn)，需求是绝对的、不可替代的 ---
-                            // 我们只关心 bestChoice 对应的那个原始 Transferable 的需求量。
-                            needed = bestChoice.Demand.CountToTransfer;
+                            pathingBudgetUsed++;
                         }
-                        else
+
+                        if (bestChoice == null)
                         {
-                            // --- 对于可入包物品，我们可以聚合所有剩余需求 ---
-                            var relevantAnalyses = demandAnalyses.Where(a => a.OriginalDemand.ThingDef == bestChoice.Source.def);
-                            needed = relevantAnalyses.Sum(a => a.IdealNeeded + a.AlternativeNeeded);
+                            DebugLogger.LogMessage(LogCategory.Planner, () => "    - No more reachable handheld candidates. Breaking handheld loop.");
+                            break; // 找不到更多可拿的了，结束循环
                         }
+
+                        // --- 确定“贪婪”的目标类型 ---
+                        if (!hasStartedGreedyLoop)
+                        {
+                            hasStartedGreedyLoop = true;
+                            handheldThingDef = bestChoice.Source.def;
+
+                            // 如果第一个拿起的东西是不可堆叠的，则执行一次就退出
+                            if (Global_Utility.IsUnbackpackable(bestChoice.Source) || bestChoice.Source.def.stackLimit <= 1)
+                            {                                
+                                int needed = bestChoice.Demand.CountToTransfer;
+                                int singleItemAmountToTake = Mathf.Min(remainingStackCounts[bestChoice.Source], needed, constraints.TryGetValue(bestChoice.Source.def, 0));
+                                if (singleItemAmountToTake > 0)
+                                {
+                                    handheldHaulList.Add(new KeyValuePair<Thing, int>(bestChoice.Source, singleItemAmountToTake));
+                                    remainingStackCounts[bestChoice.Source] -= singleItemAmountToTake;
+                                    constraints[bestChoice.Source.def] -= singleItemAmountToTake;
+                                    var relevantAnalysis = demandAnalyses.FirstOrDefault(a => a.OriginalDemand == bestChoice.Demand);
+                                    if (relevantAnalysis != null) relevantAnalysis.IdealNeeded -= singleItemAmountToTake;
+                                }
+                                break;
+                            }
+
+                            // 如果是可堆叠的，则初始化贪婪循环的参数
+                            handheldStackLimit = handheldThingDef.stackLimit;
+
+                            // 携带能力限制
+                            if (handheldThingDef.VolumePerUnit > 0)
+                            {
+                                int carryCapacityLimit = Mathf.RoundToInt(pawn.GetStatValue(StatDefOf.CarryingCapacity) / handheldThingDef.VolumePerUnit);
+                                handheldStackLimit = Mathf.Min(handheldStackLimit, carryCapacityLimit);
+                                DebugLogger.LogMessage(LogCategory.Planner, () => $"      - Handheld limit adjusted by CarryingCapacity: {carryCapacityLimit}. Final limit: {handheldStackLimit}.");
+                            }
+
+                            totalNeedForHandheldType = demandAnalyses
+                                .Where(a => a.OriginalDemand.ThingDef == handheldThingDef)
+                                .Sum(a => a.IdealNeeded + a.AlternativeNeeded);
+
+                            // 过滤候选池，只留下同类物品
+                            candidatePool.RemoveAll(c => c.Source.def != handheldThingDef);
+                        }
+
+                        // --- 迭代（包括第一次可堆叠）的通用逻辑 ---
+                        int moreNeededForStack = handheldStackLimit - currentHandheldCount;
+                        int moreNeededForJob = totalNeedForHandheldType - currentHandheldCount;
+
+                        if (moreNeededForStack <= 0 || moreNeededForJob <= 0)
+                        {
+                            DebugLogger.LogMessage(LogCategory.Planner, () => "    - Handheld is full or job need is met. Breaking greedy loop.");
+                            break; // 手满了或需求满足了，结束循环
+                        }
+
+                        var relevantAnalysisForChoice = demandAnalyses.First(a => a.OriginalDemand == bestChoice.Demand);
+                        int neededForThisDemand = relevantAnalysisForChoice.IdealSources.Contains(bestChoice.Source)
+                            ? relevantAnalysisForChoice.IdealNeeded
+                            : relevantAnalysisForChoice.AlternativeNeeded;
 
                         int amountToTake = Mathf.Min(
                             remainingStackCounts[bestChoice.Source],
-                            needed,
-                            constraints.TryGetValue(bestChoice.Source.def, 0)
+                            neededForThisDemand,
+                            constraints.TryGetValue(bestChoice.Source.def, 0),
+                            moreNeededForStack,
+                            moreNeededForJob
                         );
-                        DebugLogger.LogMessage(LogCategory.Planner, () => $"      - Handheld needed: {needed}, Available: {remainingStackCounts[bestChoice.Source]}, Manager: {constraints.TryGetValue(bestChoice.Source.def, 0)}. Final amountToTake: {amountToTake}.");
 
                         if (amountToTake > 0)
                         {
-                            shoppingBasket.Add(new KeyValuePair<Thing, int>(bestChoice.Source, amountToTake));
+                            DebugLogger.LogMessage(LogCategory.Planner, () => $"    - Greedy choice: {bestChoice.Source.LabelCap}. Taking {amountToTake}.");
+                            handheldHaulList.Add(new KeyValuePair<Thing, int>(bestChoice.Source, amountToTake));
+
+                            // --- 实时更新所有状态 ---
+                            currentHandheldCount += amountToTake;
+                            pathingOrigin = bestChoice.Source.Position;
+                            remainingStackCounts[bestChoice.Source] -= amountToTake;
+                            constraints[bestChoice.Source.def] -= amountToTake;
+                            if (relevantAnalysisForChoice.IdealSources.Contains(bestChoice.Source))
+                                relevantAnalysisForChoice.IdealNeeded -= amountToTake;
+                            else
+                                relevantAnalysisForChoice.AlternativeNeeded -= amountToTake;
                         }
+
+                        // 从池中移除已处理的候选者，防止重复选择
+                        candidatePool.Remove(bestChoice);
                     }
-                    else
+
+                    // --- “书签”植入 ---
+                    if (handheldHaulList.Count > 1) // 只有在真正发生了“贪婪”时才植入书签
                     {
-                        DebugLogger.LogMessage(LogCategory.Planner, () => "    - FindBestChoiceFromCandidates for handheld returned null.");
+                        DebugLogger.LogMessage(LogCategory.Planner, () => "    - Greedy pickup occurred. Inserting bookmark messenger.");
+                        shoppingBasket.Add(new KeyValuePair<Thing, int>(pawn, 0));
                     }
+
+                    // 将手持阶段的所有计划添加到主购物篮
+                    shoppingBasket.AddRange(handheldHaulList);
                 }
             }
             DebugLogger.LogMessage(LogCategory.Planner, () => "--- Finished ProcessDemands_Optimized ---");

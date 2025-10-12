@@ -124,7 +124,7 @@ namespace BulkLoadForTransporters.Core.Components
             // 主动向中央管理器注册或更新此任务的状态，确保我们获取的是最新信息。
             CentralLoadManager.Instance.RegisterOrUpdateTask(groupLoadable);
 
-            bool hasWorkToDo = CentralLoadManager.Instance.HasWork(groupLoadable) || BulkLoad_Utility.PawnHasNeededPuahItems(pawn, groupLoadable);
+            bool hasWorkToDo = CentralLoadManager.Instance.HasWork(groupLoadable, pawn) || WorkGiver_Utility.PawnHasNeededPuahItems(pawn, groupLoadable);
             if (!hasWorkToDo)
             {
                 DebugLogger.LogMessage(LogCategory.WorkGiver, () => "-> NO: Manager reports no work to do, and pawn has no relevant items in inventory.");
@@ -133,7 +133,7 @@ namespace BulkLoadForTransporters.Core.Components
 
             // 检查剩余的工作中是否至少有一项是需要“搬运”的。
             var remainingTransferables = groupLoadable.GetTransferables();
-            var availableToClaim = CentralLoadManager.Instance.GetAvailableToClaim(groupLoadable);
+            var availableToClaim = CentralLoadManager.Instance.GetAvailableToClaim(groupLoadable, pawn);
 
             bool anyHaulableWorkLeft = false;
             if (remainingTransferables != null)
@@ -144,7 +144,7 @@ namespace BulkLoadForTransporters.Core.Components
                     {
                         if (transferable.AnyThing is Pawn p)
                         {
-                            if (LoadTransporters_WorkGiverUtility.NeedsToBeCarried(p))
+                            if (Global_Utility.NeedsToBeCarried(p))
                             {
                                 anyHaulableWorkLeft = true;
                                 break;
@@ -160,7 +160,7 @@ namespace BulkLoadForTransporters.Core.Components
             }
 
             // 如果背包里有东西可以卸，也算是有“搬运”工作
-            if (BulkLoad_Utility.PawnHasNeededPuahItems(pawn, groupLoadable))
+            if (WorkGiver_Utility.PawnHasNeededPuahItems(pawn, groupLoadable))
             {
                 anyHaulableWorkLeft = true;
             }
@@ -187,7 +187,7 @@ namespace BulkLoadForTransporters.Core.Components
                     if (puahComp != null && puahComp.GetHashSet().Any())
                     {
                         IManagedLoadable unloadAdapter = new LoadTransportersAdapter(transporter);
-                        if (!BulkLoad_Utility.TryCreateDirectedUnloadJob(pawn, unloadAdapter, out _))
+                        if (!WorkGiver_Utility.TryCreateDirectedUnloadJob(pawn, unloadAdapter, out _))
                         {
                             foreach (var thing in puahComp.GetHashSet().ToList())
                             {
@@ -196,7 +196,7 @@ namespace BulkLoadForTransporters.Core.Components
                         }
                     }
 
-                    if (LoadTransporters_WorkGiverUtility.TryGiveBulkJob(pawn, groupLoadable, out Job job) && job.def != JobDefOf.Wait)
+                    if (WorkGiver_Utility.TryGiveBulkJob(pawn, groupLoadable, out Job job) && job.def != JobDefOf.Wait)
                     {
                         pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
                     }
@@ -224,7 +224,7 @@ namespace BulkLoadForTransporters.Core.Components
                         if (puahComp != null && puahComp.GetHashSet().Any())
                         {
                             IManagedLoadable unloadAdapter = new LoadTransportersAdapter(transporter);
-                            if (!BulkLoad_Utility.TryCreateDirectedUnloadJob(pawn, unloadAdapter, out _))
+                            if (!WorkGiver_Utility.TryCreateDirectedUnloadJob(pawn, unloadAdapter, out _))
                             {
                                 foreach (var thing in puahComp.GetHashSet().ToList())
                                 {
@@ -233,7 +233,7 @@ namespace BulkLoadForTransporters.Core.Components
                             }
                         }
 
-                        if (LoadTransporters_WorkGiverUtility.TryGiveBulkJob(pawn, groupLoadable, out Job job) && job.def != JobDefOf.Wait)
+                        if (WorkGiver_Utility.TryGiveBulkJob(pawn, groupLoadable, out Job job) && job.def != JobDefOf.Wait)
                         {
                             // NOTE: job.loadID = 1 是用来标记“连续模式”的信号旗。
                             job.loadID = 1;

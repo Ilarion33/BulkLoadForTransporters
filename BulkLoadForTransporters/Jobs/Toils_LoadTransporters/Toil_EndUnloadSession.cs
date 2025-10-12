@@ -7,6 +7,7 @@ using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
 using BulkLoadForTransporters.Jobs;
 using RimWorld;
+using System.Collections.Generic;
 using System.Linq;
 using Verse;
 using Verse.AI;
@@ -27,6 +28,8 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 if (driver == null) return;
                 DebugLogger.LogMessage(LogCategory.Toils, () => $"{toil.actor.LabelShort} is ending unload session.");
 
+                driver.ReconcileStateWithPuah(JobCondition.Succeeded);
+
                 // 卸货会话的常规清理。
                 driver._unloadTransferables = null;
                 driver._unloadRemainingNeeds = null;
@@ -46,6 +49,8 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 }
 
                 Pawn pawn = driver.pawn;
+                // 手动释放当前认领
+                //CentralLoadManager.Instance.ReleaseClaimsForPawn(pawn);
 
                 // 半径被硬编码为10
                 const float scanRadius = 10f;
@@ -59,31 +64,42 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                                  tr.parent.Faction == pawn.Faction && 
                                  tr.parent.Position.DistanceToSquared(pawn.Position) <= scanRadiusSquared)
                     .OrderBy(tr => pawn.Position.DistanceToSquared(tr.parent.Position))
-                    .ToList(); 
+                    .ToList();
 
+                var evaluatedGroupIDs = new HashSet<int>();
                 CompTransporter bestNextTransporter = null;
+
                 foreach (var tr in nearbyTransporters)
                 {
-                    DebugLogger.LogMessage(LogCategory.Toils, () => $"    - Evaluating candidate: '{tr.parent.LabelCap}'.");
-                    // HACK: 为了调用通用的 Utility 方法，我们在这里为每个候选者都创建了一个临时的 Adapter。
-                    IManagedLoadable groupLoadable = new LoadTransportersAdapter(tr);
-                    if (LoadTransporters_WorkGiverUtility.HasPotentialBulkWork(pawn, groupLoadable))
+                    // 获取组ID并检查缓存
+                    int groupID = tr.groupID;
+                    if (evaluatedGroupIDs.Contains(groupID))
                     {
-                        DebugLogger.LogMessage(LogCategory.Toils, () => $"      - Candidate has work. Selecting it as best target.");
+                        // 这个运输仓所属的组已经被评估过，直接跳过。
+                        continue;
+                    }
+
+                    // 将此组标记为已评估
+                    evaluatedGroupIDs.Add(groupID);
+
+                    IManagedLoadable groupLoadable = new LoadTransportersAdapter(tr);
+                    if (WorkGiver_Utility.HasPotentialBulkWork(pawn, groupLoadable))
+                    {
                         bestNextTransporter = tr;
                         break;
                     }
                 }
 
+
                 if (bestNextTransporter != null)
                 {
                     DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Found next target: '{bestNextTransporter.parent.LabelCap}'. Attempting to create and chain job.");
                     IManagedLoadable groupLoadable = new LoadTransportersAdapter(bestNextTransporter);
-                    if (LoadTransporters_WorkGiverUtility.TryGiveBulkJob(pawn, groupLoadable, out Job nextJob) && nextJob.def != JobDefOf.Wait)
+                    if (WorkGiver_Utility.TryGiveBulkJob(pawn, groupLoadable, out Job nextJob) && nextJob.def != JobDefOf.Wait)
                     {
                         // 将“连续模式”标记传递给下一个Job，以实现循环。
                         nextJob.loadID = 1;
-                        pawn.jobs.TryTakeOrderedJob(nextJob, JobTag.Misc);
+                        pawn.jobs.jobQueue.EnqueueFirst(nextJob, JobTag.Misc);
                         DebugLogger.LogMessage(LogCategory.Toils, () => $"    - Successfully created and chained new job: {nextJob.def.defName}.");
                     }
                     else

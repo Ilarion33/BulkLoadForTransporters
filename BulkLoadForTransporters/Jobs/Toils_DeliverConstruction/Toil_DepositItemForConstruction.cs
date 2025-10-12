@@ -1,82 +1,81 @@
 ﻿// Copyright (c) 2025 Ilarion. All rights reserved.
 //
-// Jobs/Toils_LoadTransporters/Toil_DepositItem.cs
+// Jobs/Toils_DeliverConstruction/Toil_DepositItemForConstruction.cs
 using BulkLoadForTransporters.Core;
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
 using BulkLoadForTransporters.Jobs;
 using RimWorld;
-using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 using Verse.AI;
 
-namespace BulkLoadForTransporters.Toils_LoadTransporters
+namespace BulkLoadForTransporters.Toils_DeliverConstruction
 {
-    /// <summary>
-    /// Provides a Toil that deposits a carried Thing into a container that uses the IManagedLoadable interface.
-    /// It's designed for standard containers like transport pods.
-    /// </summary>
-    public static class Toil_DepositItem
+    public static class Toil_DepositItemForConstruction
     {
         public static Toil Create(IManagedLoadable managedLoadable)
         {
-            Toil toil = ToilMaker.MakeToil("DepositItem");
+            Toil toil = ToilMaker.MakeToil("DepositItemForConstruction");
             toil.initAction = () =>
             {
-                var driver = toil.actor.jobs.curDriver as JobDriver_LoadTransportersInBulk;
+                var driver = toil.actor.jobs.curDriver as JobDriver_DeliverConstructionInBulk;
                 if (driver == null) return;
+
                 Pawn pawn = toil.actor;
-                DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is executing deposit into Transporter.");
-                Job curJob = pawn.CurJob;
                 Thing carriedThing = pawn.carryTracker.CarriedThing;
+                var jobTarget = driver.job.targetB.Thing;
+
+                DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is executing deposit into Construction Site.");
+
                 if (carriedThing == null)
                 {
                     DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Pawn is not carrying anything.");
                     return;
                 }
 
-                // 通过 Adapter 获取最终要放入的物理容器。
-                Thing jobTarget = curJob.targetB.Thing;
-                var targetContainer = managedLoadable.GetInnerContainerFor(jobTarget);
+                var targetContainer = jobTarget.TryGetInnerInteractableThingOwner();
                 if (targetContainer == null)
                 {
                     DebugLogger.LogMessage(LogCategory.Toils, () => $"-> Toil FAILED: Could not get inner container for '{jobTarget?.LabelCap}'.");
                     return;
                 }
-
-                // 从驱动的会话状态中获取当前卸货任务的精确需求。
-                var transferables = driver._unloadTransferables;
+                
                 var remainingNeeds = driver._unloadRemainingNeeds;
+                if (remainingNeeds == null)
+                {
+                    Log.Error("[BulkLoad] Deposit Toil FAILED: driver._unloadRemainingNeeds is NULL! This indicates a bug in BeginUnloadSession.");
+                    return;
+                }
 
-                // 计算实际需要存入的数量，防止因玩家中途修改清单而过量装载。
-                int needed = JobDriver_Utility.ResolveNeededAmountForUnload(carriedThing, transferables, remainingNeeds);
+                
+                remainingNeeds.TryGetValue(carriedThing.def, out int needed);
+                if (needed < 0) needed = 0;
+
                 int amountToDeposit = Mathf.Min(carriedThing.stackCount, needed);
-
                 DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Carried: {carriedThing.LabelCap} (x{carriedThing.stackCount}). Needed: {needed}. Will deposit: {amountToDeposit}.");
 
                 if (amountToDeposit > 0)
                 {
+                    // --- 关键变更：完全采纳 Portal Toil 的健壮逻辑 ---
                     Global_Utility.IsExecutingManagedUnload = true;
                     try
                     {
-                        Thing depositedThing;
-                        pawn.carryTracker.innerContainer.TryTransferToContainer(carriedThing, targetContainer, amountToDeposit, out depositedThing);
+                        // 1. 在物品被消耗（并销毁）之前，安全地记录其核心信息。
+                        ThingDef defToLoad = carriedThing.def;
 
-                        if (depositedThing != null)
+                        // 2. 执行物理操作，并忽略其不可靠的 out 参数。
+                        pawn.carryTracker.innerContainer.TryTransferToContainer(carriedThing, targetContainer, amountToDeposit, out _);
+
+                        // 3. 使用我们事前记录的、100% 可靠的数据来更新所有逻辑系统。
+                        DebugLogger.LogMessage(LogCategory.Toils, () => $"  - TransferToContainer executed for {defToLoad.defName} x{amountToDeposit}.");
+
+                        CentralLoadManager.Instance?.Notify_ItemLoaded(pawn, managedLoadable, defToLoad, amountToDeposit);
+
+                        if (remainingNeeds != null && remainingNeeds.ContainsKey(defToLoad))
                         {
-                            DebugLogger.LogMessage(LogCategory.Toils, () => $"  - TransferToContainer SUCCEEDED. Deposited: {depositedThing.LabelCap} (x{depositedThing.stackCount}).");
-                            // 通知中央管理器，物品已成功装载，以便更新全局的并发记账。
-                            CentralLoadManager.Instance?.Notify_ItemLoaded(pawn, managedLoadable, depositedThing);
-                            if (remainingNeeds != null && remainingNeeds.ContainsKey(depositedThing.def))
-                            {
-                                remainingNeeds[depositedThing.def] -= depositedThing.stackCount;
-                                DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Session needs updated for {depositedThing.def.defName}. New need: {remainingNeeds[depositedThing.def]}.");
-                            }
-                        }
-                        else
-                        {
-                            DebugLogger.LogMessage(LogCategory.Toils, () => $"  - TransferToContainer FAILED or resulted in null thing.");
+                            remainingNeeds[defToLoad] -= amountToDeposit;
+                            DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Session needs updated for {defToLoad.defName}. New need: {remainingNeeds[defToLoad]}.");
                         }
                     }
                     finally
@@ -85,9 +84,9 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                     }
                 }
 
-                // 检查卸货后手上是否还有剩余物品（溢出物）。
+                // --- 剩余物处理 ---
                 var surplus = pawn.carryTracker.CarriedThing;
-                if (surplus != null)
+                if (surplus != null) 
                 {
                     DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Surplus detected: {surplus.LabelCap} (x{surplus.stackCount}). Processing...");
                     
@@ -120,11 +119,10 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                         DebugLogger.LogMessage(LogCategory.Toils, () => $"    - Remaining surplus on hand ({pawn.carryTracker.CarriedThing.LabelCap}) exceeds capacity. Dropping.");
                         pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out Thing _);
                     }
-                }            
+                }
             };
             toil.defaultCompleteMode = ToilCompleteMode.Instant;
             return toil;
         }
-                
     }
 }

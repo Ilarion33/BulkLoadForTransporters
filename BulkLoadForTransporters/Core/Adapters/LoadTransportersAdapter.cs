@@ -126,5 +126,7 @@ namespace BulkLoadForTransporters.Core.Adapters
             var currentTransporters = primaryTransporter?.TransportersInGroup(primaryTransporter.parent.Map);
             return currentTransporters?.Sum(t => t.MassUsage) ?? 0f;
         }
+
+        public bool HandlesAbstractDemands => false;
     }
 }
