@@ -16,12 +16,25 @@ namespace BulkLoadForTransporters.Core.Adapters
     public class MapPortalAdapter : IManagedLoadable
     {
         private readonly MapPortal primaryPortal;
+        private readonly Map _map; // 新增：缓存 Map
 
-        public MapPortalAdapter(MapPortal primaryPortal)
+        // 关键变更：构造函数私有化
+        private MapPortalAdapter(MapPortal primaryPortal)
         {
             this.primaryPortal = primaryPortal;
+            this._map = primaryPortal.Map; // 在构造时缓存
         }
 
+        // 关键变更：新增安全的工厂方法
+        public static MapPortalAdapter TryCreate(MapPortal primaryPortal)
+        {
+            // --- “入口守卫” ---
+            if (primaryPortal == null || !primaryPortal.Spawned || primaryPortal.Map == null)
+            {
+                return null;
+            }
+            return new MapPortalAdapter(primaryPortal);
+        }
         public Map GetMap() => primaryPortal?.Map;
 
         // 使用MapPortal的 thingIDNumber 作为唯一标识。
@@ -91,5 +104,7 @@ namespace BulkLoadForTransporters.Core.Adapters
             // MapPortal 没有质量使用的概念。
             return 0f;
         }
+
+        public bool HandlesAbstractDemands => false;
     }
 }

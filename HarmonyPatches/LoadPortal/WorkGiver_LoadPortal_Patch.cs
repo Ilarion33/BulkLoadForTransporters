@@ -31,9 +31,9 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadPortal
         public static bool HasJobOnPortal_Prefix(ref bool __result, Pawn pawn, MapPortal portal)
         {
             // 创建特定于 MapPortal 的 Adapter 实例
-            IManagedLoadable groupLoadable = new MapPortalAdapter(portal);
+            IManagedLoadable groupLoadable = MapPortalAdapter.TryCreate(portal);
 
-            __result = LoadTransporters_WorkGiverUtility.HasPotentialBulkWork(pawn, groupLoadable);
+            __result = WorkGiver_Utility.HasPotentialBulkWork(pawn, groupLoadable);
 
             return false;
         }
@@ -45,9 +45,9 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadPortal
         [HarmonyPrefix]
         public static bool JobOnPortal_Prefix(ref Job __result, Pawn p, MapPortal portal)
         {
-            IManagedLoadable groupLoadable = new MapPortalAdapter(portal);
+            IManagedLoadable groupLoadable = MapPortalAdapter.TryCreate(portal);
 
-            LoadTransporters_WorkGiverUtility.TryGiveBulkJob(p, groupLoadable, out __result);
+            WorkGiver_Utility.TryGiveBulkJob(p, groupLoadable, out __result);
 
             return false;
         }

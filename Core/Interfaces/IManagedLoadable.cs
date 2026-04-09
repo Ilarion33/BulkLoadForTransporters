@@ -32,5 +32,12 @@ namespace BulkLoadForTransporters.Core.Interfaces
         /// Used for pathfinding, setting job targets, and other common interactions.
         /// </summary>
         Thing GetParentThing();
+
+        /// <summary>
+        /// Gets a value indicating whether the transferables from this source represent
+        /// abstract, fungible demands (like "needs steel") rather than specific
+        /// item instances (like "load this specific stack of steel").
+        /// </summary>
+        bool HandlesAbstractDemands { get; }
     }
 }

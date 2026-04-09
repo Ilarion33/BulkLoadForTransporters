@@ -62,7 +62,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
 
             foreach (var thingInBackpack in itemsToConsider)
             {
-                var bestMatch = BulkLoad_Utility.FindBestMatchFor(thingInBackpack, needs);
+                var bestMatch = Global_Utility.FindBestMatchFor(thingInBackpack, needs);
                 if (bestMatch != null)
                 {
                     // 转移任务清单上还需要的数量

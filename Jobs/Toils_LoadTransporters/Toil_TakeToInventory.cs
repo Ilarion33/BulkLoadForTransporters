@@ -3,6 +3,7 @@
 // Jobs/Toils_LoadTransporters/Toil_TakeToInventory.cs
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
+using BulkLoadForTransporters.Jobs;
 using RimWorld;
 using System.Linq;
 using UnityEngine;
@@ -23,7 +24,7 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
         /// <param name="haulState">The JobDriver's state interface for tracking hauled items.</param>
         /// <param name="loadable">The loading task interface, used to check remaining needs.</param>
         /// <returns>A configured Toil ready to be used in a JobDriver.</returns>
-        public static Toil Create(TargetIndex index, IBulkHaulState haulState, ILoadable loadable)
+        public static Toil Create(TargetIndex index, JobDriver_BulkLoadBase driver)
         {
             Toil toil = ToilMaker.MakeToil("TakeToInventory");
             toil.initAction = () =>
@@ -37,6 +38,14 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                     DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Target thing is null or destroyed.");
                     return;
                 }
+
+                var loadable = driver.GetAdapter();
+                if (loadable == null)
+                {
+                    driver.EndJobWith(JobCondition.Incompletable);
+                    return;
+                }
+                IBulkHaulState haulState = driver;
 
                 // 在释放预定之前，先检查我们是否真的拥有它。
                 if (actor.Map.reservationManager.ReservedBy(thingToPickUp, actor, curJob))

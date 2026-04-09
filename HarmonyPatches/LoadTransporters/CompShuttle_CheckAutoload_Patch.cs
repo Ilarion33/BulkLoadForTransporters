@@ -33,7 +33,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
 
             if (CentralLoadManager.Instance == null) return;
 
-            IManagedLoadable loadable = new LoadTransportersAdapter(__instance.Transporter);
+            IManagedLoadable loadable = LoadTransportersAdapter.TryCreate(__instance.Transporter);
 
             // 直接查询 Manager，看我们的系统是否正在处理这个任务
             if (CentralLoadManager.Instance.AnyClaimsInProgress(loadable))

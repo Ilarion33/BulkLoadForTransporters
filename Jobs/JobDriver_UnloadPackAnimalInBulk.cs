@@ -2,6 +2,7 @@
 //
 // Jobs/JobDriver_UnloadPackAnimalInBulk.cs
 using BulkLoadForTransporters.Core;
+using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Toils_UnloadCarriers;
 using RimWorld;
 using System.Collections.Generic;
@@ -17,6 +18,12 @@ namespace BulkLoadForTransporters.Jobs
     /// </summary>
     public class JobDriver_UnloadPackAnimalInBulk : JobDriver_BulkLoadBase
     {
+        protected override IManagedLoadable CreateAdapter()
+        {
+            // This job does not require an adapter.
+            return null;
+        }
+
         /// <summary>
         /// Provides the text report that appears in the pawn's inspection pane.
         /// </summary>

@@ -31,8 +31,8 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
                 return true;
             }
 
-            IManagedLoadable groupLoadable = new LoadTransportersAdapter(transporter);
-            __result = LoadTransporters_WorkGiverUtility.HasPotentialBulkWork(pawn, groupLoadable);
+            IManagedLoadable groupLoadable = LoadTransportersAdapter.TryCreate(transporter);
+            __result = WorkGiver_Utility.HasPotentialBulkWork(pawn, groupLoadable);
             return false;
         }
 
@@ -48,8 +48,8 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
                 return true;
             }
 
-            IManagedLoadable groupLoadable = new LoadTransportersAdapter(transporter);
-            LoadTransporters_WorkGiverUtility.TryGiveBulkJob(p, groupLoadable, out __result);
+            IManagedLoadable groupLoadable = LoadTransportersAdapter.TryCreate(transporter);
+            WorkGiver_Utility.TryGiveBulkJob(p, groupLoadable, out __result);
             return false;
         }
     }

@@ -23,7 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -60,28 +60,39 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\Adapters\ConstructionGroupAdapter.cs" />
     <Compile Include="Core\Adapters\MapPortalAdapter.cs" />
+    <Compile Include="Core\Adapters\ConstructionSiteAdapter.cs" />
     <Compile Include="Core\CentralLoadManager.cs" />
     <Compile Include="Core\Components\CompBulkLoadable.cs" />
     <Compile Include="Core\Components\CompBulkLoadablePortal.cs" />
+    <Compile Include="Core\SoftlockCleaner.cs" />
     <Compile Include="Core\DefInjection.cs" />
     <Compile Include="Core\Interfaces\IManagedLoadable.cs" />
     <Compile Include="Core\JobDefRegistry.cs" />
     <Compile Include="Core\LoadingPlanner.cs" />
     <Compile Include="Core\BulkLoadForTransportersMod.cs" />
-    <Compile Include="Core\Utils\BulkLoad_Utility.cs" />
+    <Compile Include="Core\Utils\Compatibility_Utility.cs" />
+    <Compile Include="Core\Utils\Extensibility_Utility.cs" />
+    <Compile Include="Core\Utils\JobDriver_Utility.cs" />
+    <Compile Include="Core\Utils\Global_Utility.cs" />
     <Compile Include="Core\Interfaces\IBulkHaulState.cs" />
     <Compile Include="Core\Interfaces\ILoadable.cs" />
     <Compile Include="Core\Main.cs" />
     <Compile Include="Core\Adapters\LoadTransportersAdapter.cs" />
     <Compile Include="Core\Utils\DebugLogger.cs" />
     <Compile Include="Core\Utils\SafeUnloadManager.cs" />
-    <Compile Include="Core\Utils\LoadTransporters_WorkGiverUtility.cs" />
+    <Compile Include="Core\Utils\WorkGiver_Utility.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\CleanupJobCompletion_Patch.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\OptimisticHauling_Patches.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\JobChaining_PerceptionFilter_Patch.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\DeconstructForBlueprint_Disabler_Patch.cs" />
+    <Compile Include="HarmonyPatches\DeliverConstruction\WorkGiver_DeliverConstruction_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadPortal\EnterPortalUtility_ThingsBeingHauledTo_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadPortal\MapPortal_SubtractFromToLoadList_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadPortal\WorkGiver_LoadPortal_Patch.cs" />
@@ -93,6 +104,7 @@
     <Compile Include="HarmonyPatches\LoadTransporters\CompShuttle_CheckAutoload_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadTransporters\Game_DeinitAndRemoveMap_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadTransporters\JobGiver_EnterTransporter_Patch.cs" />
+    <Compile Include="HarmonyPatches\LoadTransporters\JobGiver_GetEnergy_Patches.cs" />
     <Compile Include="HarmonyPatches\LoadTransporters\TransporterUtility_AllSendables_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadTransporters\WorkGiver_LoadTransporters_Patch.cs" />
     <Compile Include="HarmonyPatches\LoadTransporters\Pawn_DeSpawn_Patch.cs.cs" />
@@ -102,12 +114,17 @@
     <Compile Include="HarmonyPatches\LoadTransporters\FloatMenuOption_LoadTransporters_Patch.cs" />
     <Compile Include="HarmonyPatches\UnloadCarriers\FloatMenuOption_UnloadCarriers_Patch.cs" />
     <Compile Include="HarmonyPatches\UnloadCarriers\WorkGiver_UnloadCarriers_Patch.cs" />
+    <Compile Include="Jobs\JobDriver_DeliverConstructionInBulk.cs" />
     <Compile Include="Jobs\JobDriver_BulkLoadBase.cs" />
     <Compile Include="Jobs\JobDriver_LoadPortalInBulk.cs" />
     <Compile Include="Jobs\JobDriver_UnloadPackAnimalInBulk.cs" />
-    <Compile Include="Jobs\Toils_LoadPortal\Toil_BeginUnloadSessionForPortal.cs" />
+    <Compile Include="Jobs\Toils_DeliverConstruction\Toil_BeginUnloadSessionForConstruction.cs" />
+    <Compile Include="Jobs\Toils_DeliverConstruction\Toil_ClearSiteIfNecessary.cs" />
+    <Compile Include="Jobs\Toils_DeliverConstruction\Toil_DepositItemForConstruction.cs" />
+    <Compile Include="Jobs\Toils_DeliverConstruction\Toil_EndUnloadSessionForConstruction.cs" />
+    <Compile Include="Jobs\Toils_LoadPortal\Toil_BeginUnloadSession.cs" />
     <Compile Include="Jobs\Toils_LoadPortal\Toil_DepositItemForPortal.cs" />
-    <Compile Include="Jobs\Toils_LoadTransporters\Toil_BeginUnloadSession.cs" />
+    <Compile Include="Jobs\Toils_LoadTransporters\Toil_BeginUnloadSessionForTransporters.cs" />
     <Compile Include="Jobs\Toils_LoadTransporters\Toil_DepositItem.cs" />
     <Compile Include="Jobs\Toils_LoadTransporters\Toil_DropAndTakeFromContainer.cs" />
     <Compile Include="Jobs\Toils_LoadTransporters\Toil_EndUnloadSession.cs" />
@@ -126,6 +143,36 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Core\Settings.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Defs\BulkLoad_Jobs.xml" />
+    <Content Include="Languages\ChineseSimplified\Keyed\BulkLoad_Keys.xml" />
+    <Content Include="Languages\English\Keyed\BulkLoad_Keys.xml" />
+  </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>:: 模组根目录
+SET MODS_DIR="E:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\BulkLoadForTransporters"
+
+:: 生成Assemblies
+IF NOT EXIST %25MODS_DIR%25\Assemblies\ MKDIR %25MODS_DIR%25\Assemblies\
+xcopy "$(TargetPath)" %25MODS_DIR%25\Assemblies\ /Y /I /Q
+IF "$(ConfigurationName)" == "Debug" (
+    xcopy "$(TargetDir)$(TargetName).pdb" %25MODS_DIR%25\Assemblies\ /Y /I /Q
+) ELSE (
+    IF EXIST %25MODS_DIR%25\Assemblies\$(TargetName).pdb DEL %25MODS_DIR%25\Assemblies\$(TargetName).pdb /Q
+)
+
+:: 生成Defs
+IF NOT EXIST %25MODS_DIR%25\Defs\ ( MKDIR %25MODS_DIR%25\Defs\ )
+xcopy "$(ProjectDir)Defs" %25MODS_DIR%25\Defs\ /E /Y /I
+
+:: 生成Languages
+IF NOT EXIST %25MODS_DIR%25\Languages\ ( MKDIR %25MODS_DIR%25\Languages\ )
+xcopy "$(ProjectDir)Languages" %25MODS_DIR%25\Languages\ /E /Y /I</PostBuildEvent>
+  </PropertyGroup>
 </Project>

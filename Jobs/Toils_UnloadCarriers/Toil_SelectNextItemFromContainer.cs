@@ -44,7 +44,7 @@ namespace BulkLoadForTransporters.Toils_UnloadCarriers
                 float availableMass = MassUtility.FreeSpace(pawn);
                 if (availableMass > 1E-05f)
                 {
-                    foreach (var thing in containerOwner.Where(t => !BulkLoad_Utility.IsUnbackpackable(t)))
+                    foreach (var thing in containerOwner.Where(t => !Global_Utility.IsUnbackpackable(t)))
                     {
                         float massPerItem = thing.GetStatValue(StatDefOf.Mass);
                         int countAffordable = (massPerItem > 1E-05f) ? Mathf.FloorToInt(availableMass / massPerItem) : thing.stackCount;

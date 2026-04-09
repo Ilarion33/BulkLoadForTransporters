@@ -4,13 +4,14 @@
 using BulkLoadForTransporters.Core;
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
+using BulkLoadForTransporters.Jobs;
 using RimWorld;
 using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 using Verse.AI;
 
-namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
+namespace BulkLoadForTransporters.Toils_LoadPortal
 {
     /// <summary>
     /// A utility class for creating the Toil sequence to deposit an item into a MapPortal.
@@ -21,7 +22,7 @@ namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
         /// Creates a sequence of Toils that waits for a duration and then deposits the carried item.
         /// </summary>
         /// <returns>An IEnumerable of Toils representing the deposit sequence.</returns>
-        public static IEnumerable<Toil> Create(IManagedLoadable managedLoadable)
+        public static IEnumerable<Toil> Create()
         {
             // NOTE: 这个90 tick的延迟是镜像自原版的JobDriver_HaulToPortal，以保持行为一致性。
             const int DepositDuration = 90;
@@ -42,6 +43,15 @@ namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
             {
                 var driver = depositToil.actor.jobs.curDriver as JobDriver_BulkLoadBase;
                 if (driver == null) return;
+
+                var managedLoadable = driver.GetAdapter();
+                if (managedLoadable == null)
+                {
+                    // 如果 Adapter 创建失败，说明 Job 无效，结束它
+                    driver.EndJobWith(JobCondition.Incompletable);
+                    return;
+                }
+
                 Pawn pawn = depositToil.actor;
                 DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is executing deposit into Portal.");
                 Thing carriedThing = pawn.carryTracker.CarriedThing;
@@ -62,13 +72,13 @@ namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
                 // 与 Toil_DepositItem 保持一致，我们也考虑会话状态中的剩余需求
                 var transferables = driver._unloadTransferables;
                 var remainingNeeds = driver._unloadRemainingNeeds;
-                int needed = GetCurrentNeededAmountFor(transferables, carriedThing, remainingNeeds);
+                int needed = JobDriver_Utility.ResolveNeededAmountForUnload(carriedThing, transferables, remainingNeeds);
                 int amountToDeposit = Mathf.Min(carriedThing.stackCount, needed);
 
                 DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Carried: {carriedThing.LabelCap} (x{carriedThing.stackCount}). Needed: {needed}. Will deposit: {amountToDeposit}.");
                 if (amountToDeposit > 0)
                 {
-                    BulkLoad_Utility.IsExecutingManagedUnload = true;
+                    Global_Utility.IsExecutingManagedUnload = true;
                     try
                     {
                         // 在物品被传送（并可能被销毁）之前，安全地记录其核心信息。
@@ -88,25 +98,24 @@ namespace BulkLoadForTransporters.Jobs.Toils_LoadPortal
                     }
                     finally
                     {
-                        BulkLoad_Utility.IsExecutingManagedUnload = false;
+                        Global_Utility.IsExecutingManagedUnload = false;
                     }
+                }
+
+                // 检查卸货后手上是否还有剩余物品（溢出物）。
+                var surplus = pawn.carryTracker.CarriedThing;
+                if (surplus != null)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Surplus detected: {surplus.LabelCap} (x{surplus.stackCount}). Dropping on ground.");
+
+                    // 无论任何原因，只要有剩余，就全部丢在地上。
+                    pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out Thing _);
                 }
             };
             depositToil.defaultCompleteMode = ToilCompleteMode.Instant;
 
             yield return depositToil;
         }
-
-        /// <summary>
-        /// A private helper to calculate the remaining amount needed for a specific Thing.
-        /// </summary>
-        private static int GetCurrentNeededAmountFor(List<TransferableOneWay> transferables, Thing thing, Dictionary<ThingDef, int> remainingNeeds)
-        {
-            if (transferables == null || thing == null || remainingNeeds == null) return 0;
-            if (!remainingNeeds.TryGetValue(thing.def, out int totalNeeded) || totalNeeded <= 0) return 0;
-            var bestMatch = BulkLoad_Utility.FindBestMatchFor(thing, transferables);
-            if (bestMatch != null) return Mathf.Min(bestMatch.CountToTransfer, totalNeeded);
-            return 0;
-        }
+               
     }
 }

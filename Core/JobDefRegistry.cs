@@ -1,8 +1,9 @@
 ﻿// Copyright (c) 2025 Ilarion. All rights reserved.
 //
 // Core/JobDefRegistry.cs
+using BulkLoadForTransporters.Core.Utils;
 using RimWorld;
-using System.Collections.Generic; 
+using System.Collections.Generic;
 using Verse;
 
 namespace BulkLoadForTransporters.Core
@@ -15,22 +16,33 @@ namespace BulkLoadForTransporters.Core
     [StaticConstructorOnStartup]
     public static class JobDefRegistry
     {
+        // 新增一个委托，定义了注册方法的“形状”
+        public delegate void DefRegistration(Dictionary<ThingDef, JobDef> map);
+        // 新增一个公共事件，让外部模块可以“订阅”
+        public static event DefRegistration OnRegisterDefs;
+
         public static readonly JobDef LoadTransporters;
         public static readonly JobDef LoadPortal;
         public static readonly JobDef UnloadCarriers;
+        public static readonly JobDef DeliverToConstruction;
 
         /// <summary>
         /// A high-performance set containing all JobDefs related to "loading" operations.
         /// </summary>
-        public static readonly HashSet<JobDef> LoadingJobs;
+        public static  HashSet<JobDef> LoadingJobs;
 
         /// <summary>
         /// A high-performance set containing all JobDefs related to "unloading" operations.
         /// </summary>
         public static readonly HashSet<JobDef> UnloadingJobs;
 
+        /// A high-performance set containing all JobDefs related to "cleanup" operations
+        /// that are part of our construction delivery loop.
+        /// </summary>
+        public static readonly HashSet<JobDef> CleanupJobs;
+
         // NOTE: 这是一个从ThingDef动态映射到对应JobDef的字典。
-        private static readonly Dictionary<ThingDef, JobDef> JobDefMap;
+        public static  Dictionary<ThingDef, JobDef> JobDefMap;
 
 
         static JobDefRegistry()
@@ -39,12 +51,14 @@ namespace BulkLoadForTransporters.Core
             LoadTransporters = DefDatabase<JobDef>.GetNamed("LoadTransportersInBulk_Load");
             LoadPortal = DefDatabase<JobDef>.GetNamed("LoadPortalInBulk");
             UnloadCarriers = DefDatabase<JobDef>.GetNamed("UnloadPackAnimalInBulk");
+            DeliverToConstruction = DefDatabase<JobDef>.GetNamed("DeliverToConstructionInBulk");
 
             // 将JobDef实例放入对应的HashSet中，以便进行快速的类型检查。
             LoadingJobs = new HashSet<JobDef>
             {
                 LoadTransporters,
-                LoadPortal
+                LoadPortal,
+                DeliverToConstruction
             };
 
             UnloadingJobs = new HashSet<JobDef>
@@ -52,15 +66,37 @@ namespace BulkLoadForTransporters.Core
                 UnloadCarriers
             };
 
+            CleanupJobs = new HashSet<JobDef>
+            {
+                JobDefOf.CutPlant,
+                JobDefOf.Deconstruct,
+                JobDefOf.RemoveFloor,
+                JobDefOf.HaulToCell
+            };
+
             JobDefMap = new Dictionary<ThingDef, JobDef>();
 
-            // HACK: 我们依赖原版的ThingRequestGroup来动态识别所有类型的运输仓和传送门。
+            // HACK: 依赖原版的ThingRequestGroup来动态识别所有类型的运输仓和传送门。
             // 这是为了自动兼容其他Mod添加的、遵循了原版规范的新建筑。
             var transporterGroup = ThingRequestGroup.Transporter;
             var portalGroup = ThingRequestGroup.MapPortal;
+            var blueprintGroup = ThingRequestGroup.Blueprint;
+            var frameGroup = ThingRequestGroup.BuildingFrame;
 
             foreach (var def in DefDatabase<ThingDef>.AllDefsListForReading)
             {
+                //if (def is VehicleDef || typeof(VehiclePawn).IsAssignableFrom(def.thingClass))
+                //{
+                //    JobDefMap[def] = LoadVehicle;
+                //    continue;
+                //}
+
+                if ((blueprintGroup.Includes(def) || frameGroup.Includes(def)) && !Compatibility_Utility.IsIncompatibleConstructionDef(def))
+                {
+                    JobDefMap[def] = DeliverToConstruction;
+                    continue;
+                }
+
                 if (transporterGroup.Includes(def))
                 {
                     // 将所有被游戏认为是“运输仓”的ThingDef，都映射到处理运输仓的JobDef上。
@@ -74,6 +110,7 @@ namespace BulkLoadForTransporters.Core
                     JobDefMap[def] = LoadPortal;
                 }
             }
+            OnRegisterDefs?.Invoke(JobDefMap);
         }
 
         /// <summary>
@@ -107,6 +144,14 @@ namespace BulkLoadForTransporters.Core
         public static bool IsUnloadingJob(JobDef def)
         {
             return def != null && UnloadingJobs.Contains(def);
+        }
+
+        /// <summary>
+        /// Checks if a given JobDef is categorized as a "cleanup" job for our systems.
+        /// </summary>
+        public static bool IsCleanupJob(JobDef def)
+        {
+            return def != null && CleanupJobs.Contains(def);
         }
     }
 }

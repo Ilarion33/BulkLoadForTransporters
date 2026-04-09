@@ -3,6 +3,7 @@
 // Jobs/Toils_LoadTransporters/Toil_PrepareToUnloadFromInventory.cs
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
+using BulkLoadForTransporters.Jobs;
 using PickUpAndHaul;
 using RimWorld;
 using System.Linq;
@@ -22,18 +23,27 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
         /// </summary>
         /// <param name="haulState">The driver's state tracker.</param>
         /// <param name="loadable">The loading destination, used to check which items are needed.</param>
-        public static Toil Create(IBulkHaulState haulState, ILoadable loadable)
+        public static Toil Create(IBulkHaulState haulState)
         {
             Toil toil = ToilMaker.MakeToil("PrepareToUnloadFromInventory");
             toil.initAction = () =>
             {
                 var pawn = toil.actor;
+                var driver = pawn.jobs.curDriver as JobDriver_BulkLoadBase;
                 DebugLogger.LogMessage(LogCategory.Toils, () => $"{pawn.LabelShort} is preparing for an unload-only job.");
                 // 获取PUAH组件，这是所有物品的来源。
                 var puahComp = pawn.TryGetComp<CompHauledToInventory>();
                 if (puahComp == null)
                 {
                     DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil ABORTED: Pawn has no CompHauledToInventory.");
+                    return;
+                }
+
+                var loadable = driver.GetAdapter();
+                if (loadable == null)
+                {
+                    DebugLogger.LogMessage(LogCategory.Toils, () => "-> Toil FAILED: Could not create a valid adapter for the job target.");
+                    driver.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
 
@@ -50,7 +60,7 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Scanning {itemsFromPuah.Count} items in PUAH inventory.");
                 foreach (var thing in itemsFromPuah)
                 {
-                    if (BulkLoad_Utility.FindBestMatchFor(thing, neededTransferables) != null)
+                    if (Global_Utility.FindBestMatchFor(thing, neededTransferables) != null)
                     {
                         // TrackOriginalPuahItem 用于在Job结束时正确地与PUAH进行状态同步。
                         haulState.TrackOriginalPuahItem(thing);

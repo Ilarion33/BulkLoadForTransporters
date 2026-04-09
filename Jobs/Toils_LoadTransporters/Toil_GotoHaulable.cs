@@ -4,6 +4,7 @@
 using BulkLoadForTransporters.Core;
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
+using BulkLoadForTransporters.Jobs;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -23,7 +24,7 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
         /// <param name="loadable">The context of the overall loading job.</param>
         /// <param name="haulState">The JobDriver's state tracker.</param>
         /// <param name="jumpTarget">The Toil to jump to if the target becomes invalid.</param>
-        public static Toil Create(TargetIndex index, ILoadable loadable, IBulkHaulState haulState, Toil jumpTarget)
+        public static Toil Create(TargetIndex index, JobDriver_BulkLoadBase driver, Toil jumpTarget)
         {
             Toil toil = ToilMaker.MakeToil("GotoHaulable");
             int ticksUntilNextCheck = 0;
@@ -85,8 +86,16 @@ namespace BulkLoadForTransporters.Toils_LoadTransporters
                 ticksUntilNextCheck--;
                 if (ticksUntilNextCheck <= 0)
                 {
+                    var adapter = driver.GetAdapter();
+                    if (adapter == null)
+                    {
+                        // 如果 Adapter 无效，说明 Job 已经有问题了，直接结束
+                        driver.EndJobWith(JobCondition.Incompletable);
+                        return;
+                    }
+
                     Thing thing = toil.actor.CurJob.GetTarget(index).Thing;
-                    int neededAmount = (thing != null) ? Toil_TakeToInventory.GetCurrentNeededAmountFor(loadable, thing.def, haulState) : 0;
+                    int neededAmount = (thing != null) ? Toil_TakeToInventory.GetCurrentNeededAmountFor(adapter, thing.def, driver) : 0;
                     if (thing == null || neededAmount <= 0)
                     {
                         DebugLogger.LogMessage(LogCategory.Toils, () => $"  - Tick check: Target '{thing?.LabelCap}' is no longer needed (needed: {neededAmount}). Ending this goto.");

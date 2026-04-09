@@ -16,14 +16,24 @@ namespace BulkLoadForTransporters.Core.Adapters
     public class LoadTransportersAdapter : IManagedLoadable
     {
         private readonly CompTransporter primaryTransporter;
+        private readonly Map _map; // 新增：缓存 Map
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LoadTransportersAdapter"/> class.
-        /// </summary>
-        /// <param name="primaryTransporter">Any CompTransporter within the target group.</param>
-        public LoadTransportersAdapter(CompTransporter primaryTransporter)
+        // 关键变更：构造函数私有化
+        private LoadTransportersAdapter(CompTransporter primaryTransporter)
         {
             this.primaryTransporter = primaryTransporter;
+            this._map = primaryTransporter.parent.Map; // 在构造时缓存
+        }
+
+        // 关键变更：新增安全的工厂方法
+        public static LoadTransportersAdapter TryCreate(CompTransporter primaryTransporter)
+        {
+            // --- “入口守卫” ---
+            if (primaryTransporter == null || primaryTransporter.parent == null || !primaryTransporter.parent.Spawned || primaryTransporter.parent.Map == null)
+            {
+                return null;
+            }
+            return new LoadTransportersAdapter(primaryTransporter);
         }
 
         public Map GetMap() => primaryTransporter?.parent.Map;
@@ -126,5 +136,7 @@ namespace BulkLoadForTransporters.Core.Adapters
             var currentTransporters = primaryTransporter?.TransportersInGroup(primaryTransporter.parent.Map);
             return currentTransporters?.Sum(t => t.MassUsage) ?? 0f;
         }
+
+        public bool HandlesAbstractDemands => false;
     }
 }

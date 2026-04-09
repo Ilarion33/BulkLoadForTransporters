@@ -41,7 +41,7 @@ namespace BulkLoadForTransporters.Toils_UnloadCarriers
 
                 // 从这里开始，我们只使用经过物理验证的列表
                 var backpackThings = physicallyPresentThings.Where(t => pawn.inventory.innerContainer.Contains(t));
-                BulkLoad_Utility.RegisterHauledThingsWithPuah(pawn, backpackThings);
+                Global_Utility.RegisterHauledThingsWithPuah(pawn, backpackThings);
 
                 Thing carriedThing = physicallyPresentThings.FirstOrDefault(t => pawn.carryTracker.CarriedThing == t);
                 if (carriedThing == null)
@@ -64,7 +64,7 @@ namespace BulkLoadForTransporters.Toils_UnloadCarriers
 
                 if (haulJob != null)
                 {
-                    pawn.jobs.TryTakeOrderedJob(haulJob, JobTag.Misc);
+                    pawn.jobs.jobQueue.EnqueueFirst(haulJob, JobTag.Misc);
                 }
                 // 在成功处理完所有事情后，清空逻辑列表。
                 haulState.HauledThings.Clear();

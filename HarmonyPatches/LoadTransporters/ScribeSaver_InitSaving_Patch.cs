@@ -19,6 +19,12 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
         /// </summary>
         public static void Prefix()
         {
+            if (!UnityData.IsInMainThread)
+            {
+                DebugLogger.LogMessage(LogCategory.Manager, () => "ScribeSaver_InitSaving_Patch was triggered from a background thread. Aborting pre-save cleanup to prevent errors.");
+                return;
+            }
+
             // NOTE: 这是一个重要的安全功能，用于防止因未完成的Job而导致的存档损坏。
             // 只有在用户于设置中启用了此选项时才运行。
             if (LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Settings>().cleanupOnSave)

@@ -19,12 +19,19 @@ namespace BulkLoadForTransporters.HarmonyPatches.UnloadCarriers
         /// <summary>
         /// Determines if a pawn is of a type that should be handled exclusively by vanilla logic.
         /// </summary>
-        private static bool ShouldLetVanillaHandle(Pawn pawn)
+        private static bool ShouldLetVanillaHandle(Pawn pawn, Thing target)
         {            
             if (pawn.RaceProps.IsMechanoid && !PickUpAndHaul.Settings.AllowMechanoids)
             {
                 return true;
             }
+
+            if ((target as Pawn)?.TryGetComp<CompMechCarrier>() != null)
+            {
+                return true;
+            }
+
+
             return false;
         }
 
@@ -38,6 +45,24 @@ namespace BulkLoadForTransporters.HarmonyPatches.UnloadCarriers
             if (!UnloadCarriersJobGiverUtility.HasJobOnThing(pawn, t, forced))
             {
                 return false;
+            }
+
+            Pawn carrier = t as Pawn;
+            if (carrier == null) return false;
+
+            if (carrier.CurJob != null)
+            {
+                var jobDef = carrier.CurJob.def;
+                if (JobDefRegistry.IsLoadingJob(jobDef) ||
+                    JobDefRegistry.IsUnloadingJob(jobDef) ||
+                    jobDef == JobDefOf.HaulToCell ||
+                    jobDef == JobDefOf.UnloadYourInventory ||
+                    jobDef == JobDefOf.UnloadInventory ||
+                    jobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory") ||
+                    jobDef == DefDatabase<JobDef>.GetNamed("HaulToInventory"))
+                {
+                    return false;
+                }
             }
 
             // 检查小人手上是否已拿着东西。
@@ -54,8 +79,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.UnloadCarriers
                 return false;
             }
 
-            Pawn carrier = t as Pawn;
-            if (carrier == null || !carrier.inventory.innerContainer.Any)
+            if (!carrier.inventory.innerContainer.Any)
             {
                 return false;
             }
@@ -90,7 +114,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.UnloadCarriers
             }
 
             // 责任划分：决定这个任务是由我们处理，还是应该交还给原版。
-            if (ShouldLetVanillaHandle(pawn))
+            if (ShouldLetVanillaHandle(pawn, t))
             {
                 return true; 
             }
@@ -111,7 +135,7 @@ namespace BulkLoadForTransporters.HarmonyPatches.UnloadCarriers
             {
                 return true;
             }
-            if (ShouldLetVanillaHandle(pawn))
+            if (ShouldLetVanillaHandle(pawn, t))
             {
                 return true; 
             }

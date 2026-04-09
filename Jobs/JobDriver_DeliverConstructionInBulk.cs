@@ -1,80 +1,69 @@
 ﻿// Copyright (c) 2025 Ilarion. All rights reserved.
 //
-// Jobs/JobDriver_LoadPortalInBulk.cs
+// Jobs/JobDriver_DeliverConstructionInBulk.cs
 using BulkLoadForTransporters.Core;
 using BulkLoadForTransporters.Core.Adapters;
 using BulkLoadForTransporters.Core.Interfaces;
 using BulkLoadForTransporters.Core.Utils;
-using BulkLoadForTransporters.Toils_LoadPortal;
+using BulkLoadForTransporters.HarmonyPatches.DeliverConstruction;
+using BulkLoadForTransporters.Toils_DeliverConstruction;
 using BulkLoadForTransporters.Toils_LoadTransporters;
 using RimWorld;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using Verse;
 using Verse.AI;
 
 namespace BulkLoadForTransporters.Jobs
 {
-    /// <summary>
-    /// A concrete JobDriver for bulk loading items into a MapPortal (e.g., a PitGate).
-    /// This class orchestrates the Toil sequence for the entire portal loading process,
-    /// mirroring the behavior of JobDriver_LoadTransportersInBulk.
-    /// </summary>
-    public class JobDriver_LoadPortalInBulk : JobDriver_BulkLoadBase
+    public class JobDriver_DeliverConstructionInBulk : JobDriver_BulkLoadBase
     {
         protected override IManagedLoadable CreateAdapter()
         {
-            var portal = this.TargetB.Thing as MapPortal;
-            return MapPortalAdapter.TryCreate(portal);
+            var constructible = this.TargetB.Thing as IConstructible;
+            OptimisticHaulingController.IsInBulkPlanningPhase = true;
+            try
+            {
+                return ConstructionGroupAdapter.TryCreate(constructible, this.pawn);
+            }
+            finally
+            {
+                OptimisticHaulingController.IsInBulkPlanningPhase = false;
+            }
         }
-
-        /// <summary>
-        /// Provides the specific report string for loading portals.
-        /// </summary>
+        
         public override string GetReport()
         {
-            if (job.targetQueueA.NullOrEmpty())
+            if (job.targetB.HasThing)
             {
-                if (job.targetB.HasThing)
-                {
-                    return "BulkLoadForTransporters.ReportString.LoadingPortal".Translate(job.targetB.Thing.LabelShortCap);
-                }
+                return "BulkLoadForTransporters.ReportString.DeliveringTo".Translate(job.targetB.Thing.LabelShortCap);
             }
-            return "BulkLoadForTransporters.ReportString.LoadingPortal_Generic".Translate();
+            return "BulkLoadForTransporters.ReportString.DeliveringTo_Generic".Translate();
         }
 
-        /// <summary>
-        /// Defines the sequence of Toils for the bulk portal loading job.
-        /// </summary>
         protected override IEnumerable<Toil> MakeNewToils()
-        {           
-            // 注册核心清理器 (继承自基类)
+        {    
             this.AddFinishAction(jobCondition => this.ReconcileStateWithPuah(jobCondition));
 
-            // 设置 Job 级别的失败条件
-            this.FailOn(() => EnterPortalUtility.WasLoadingCanceled(job.targetB.Thing));
-            this.FailOnDestroyedOrNull(TargetIndex.B);
-                        
             this.FailOn(() => {
                 if (pawn.pather.Moving && (_pickupPhaseCompleted || job.haulOpportunisticDuplicates))
                 {
-                    if (pawn.IsHashIntervalTick(LoadedModManager.GetMod<Core.BulkLoadForTransportersMod>().GetSettings<Settings>().AiUpdateFrequency))
+                    if (pawn.IsHashIntervalTick(LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Settings>().AiUpdateFrequency))
                     {
-                        // 这里使用的是为独立目标（如Portal）设计的简化版验证逻辑。
-                        var adapter = GetAdapter();
-                        if (adapter == null || !JobDriver_Utility.ValidateSingleTarget(this, adapter))
+                        if (this.GetAdapter() == null || !JobDriver_Utility.ValidateAndRedirectConstructionTarget(this))
                         {
-                            return true;
+                            return true; // 验证失败，终止 Job
                         }
                     }
                 }
                 return false;
             });
 
-            // --- 序幕: 规划 --- 
+            // --- 序幕: 规划 ---
             yield return Toil_ReplanJob.Create();
 
-            // --- 检查模式 --- 
+            // --- 检查是“拾取”还是“仅卸货” ---
             Toil pickupPhase = ToilMaker.MakeToil("PickupPhase");
             Toil unloadOnlyPhase = ToilMaker.MakeToil("UnloadOnlyPhase");
             Toil afterPickupPhase = ToilMaker.MakeToil("AfterPickupPhase");
@@ -146,7 +135,7 @@ namespace BulkLoadForTransporters.Jobs
             yield return unloadOnlyPhase;
             yield return Toil_PrepareToUnloadFromInventory.Create(this);
 
-            // --- 汇合点 --- 
+            // --- 所有拾取/准备流程的汇合点 ---
             yield return afterPickupPhase;
 
             // =========================================================================
@@ -154,35 +143,38 @@ namespace BulkLoadForTransporters.Jobs
             // =========================================================================
             Toil gotoToil = Toils_Goto.GotoThing(TargetIndex.B, PathEndMode.Touch);
             gotoToil.AddPreInitAction(() => {
-                var adapter = GetAdapter();
-                if (adapter != null)
-                {
-                    JobDriver_Utility.ValidateSingleTarget(this, adapter);
-                }
+                JobDriver_Utility.ValidateAndRedirectConstructionTarget(this);
             });
             yield return gotoToil;
+
+            yield return Toil_ClearSiteIfNecessary.Create();
 
             // =========================================================================
             //                         第三幕: 卸货流程
             // =========================================================================
+            // 确保主目标已经从蓝图变成了框架。
+            yield return Toils_Construct.MakeSolidThingFromBlueprintIfNecessary(TargetIndex.B, TargetIndex.B);
+
+            // --- 配送阶段 (与运输仓模式完全对齐) ---
             yield return Toil_ReconcileHauledState.Create(this);
-            yield return Toil_BeginUnloadSession.Create();
+            yield return Toil_BeginUnloadSessionForConstruction.Create();
+
             Toil unloadLoopStart = ToilMaker.MakeToil("UnloadLoopStart");
             Toil unloadLoopEnd = ToilMaker.MakeToil("UnloadLoopEnd");
+
             yield return unloadLoopStart;
             yield return Toils_Jump.JumpIf(unloadLoopEnd, () => !HauledThings.Any());
             yield return Toil_PrepareNextUnloadItem.Create();
             yield return Toils_Jump.JumpIf(unloadLoopEnd, () => pawn.carryTracker.CarriedThing == null);
 
-            yield return Toils_General.Wait(LoadedModManager.GetMod<Core.BulkLoadForTransportersMod>().GetSettings<Core.Settings>().visualUnloadDelay, TargetIndex.B);
-            foreach (var toil in Toil_DepositItemForPortal.Create())
-            {
-                yield return toil;
-            }
+            //yield return Toils_General.Wait(Mathf.Max(0, LoadedModManager.GetMod<Core.BulkLoadForTransportersMod>().GetSettings<Core.Settings>().visualUnloadDelay - 15), TargetIndex.B);
+            yield return Toils_General.Wait(2);
+            yield return Toil_DepositItemForConstruction.Create();
 
             yield return Toils_Jump.Jump(unloadLoopStart);
+
             yield return unloadLoopEnd;
-            yield return Toil_EndUnloadSession.Create();
+            yield return Toil_EndUnloadSessionForConstruction.Create();
         }
     }
 }
