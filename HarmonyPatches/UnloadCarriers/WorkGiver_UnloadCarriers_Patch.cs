@@ -71,14 +71,6 @@ namespace BulkLoadForTransporters.HarmonyPatches.UnloadCarriers
                 return false;
             }
 
-            // 检查小人的背包是否有足够的剩余空间，以满足设置中的门槛。
-            var settings = LoadedModManager.GetMod<Core.BulkLoadForTransportersMod>().GetSettings<Core.Settings>();
-            float maxEncumbranceThreshold = 1f - settings.minFreeSpaceToUnloadCarrierPct;
-            if (MassUtility.EncumbrancePercent(pawn) > maxEncumbranceThreshold)
-            {
-                return false;
-            }
-
             if (!carrier.inventory.innerContainer.Any)
             {
                 return false;

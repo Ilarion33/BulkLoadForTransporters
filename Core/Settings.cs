@@ -16,7 +16,6 @@ namespace BulkLoadForTransporters.Core
         public bool enableBulkLoadPortal = true;
         public bool enableBulkLoadVehicles = true;
         public bool enableBulkUnloadCarriers = true;
-        public bool enableBulkConstructionDelivery = false;
 
         // --- General Settings ---
         public int AiUpdateFrequency = 60;
@@ -24,10 +23,6 @@ namespace BulkLoadForTransporters.Core
         public bool cleanupOnSave = true;
         public bool enableSoftlockCleaner = true;
         public bool cheatIgnoreInventoryMass = false;
-
-        // --- Construction Delivery ---
-        public int constructionGroupingGridSize = 32;
-        public float constructionChainScanRadius = 20f;
 
         // --- Bulk Loading Settings ---
         public float opportunityScanRadius = 90f;
@@ -38,7 +33,6 @@ namespace BulkLoadForTransporters.Core
 
 
         // --- Bulk Unloading Settings ---
-        public float minFreeSpaceToUnloadCarrierPct = 0.5f;
         public bool reserveCarrierOnUnload = false;
         public bool autoOpenCarrierGear = true;
 
@@ -61,7 +55,6 @@ namespace BulkLoadForTransporters.Core
             Scribe_Values.Look(ref enableBulkLoadPortal, "enableBulkLoadPortal", true);
             Scribe_Values.Look(ref enableBulkLoadVehicles, "enableBulkLoadVehicles", true);
             Scribe_Values.Look(ref enableBulkUnloadCarriers, "enableBulkUnloadCarriers", true);
-            Scribe_Values.Look(ref enableBulkConstructionDelivery, "enableBulkConstructionDelivery", false);
 
 
             // --- General ---
@@ -76,9 +69,6 @@ namespace BulkLoadForTransporters.Core
             Scribe_Values.Look(ref logToils, "logToils", false);
             Scribe_Values.Look(ref logManager, "logManager", false);
 
-            Scribe_Values.Look(ref constructionGroupingGridSize, "constructionGroupingGridSize", 32);
-            Scribe_Values.Look(ref constructionChainScanRadius, "constructionChainScanRadius", 20f);
-
             // --- Bulk Loading ---
             Scribe_Values.Look(ref opportunityScanRadius, "opportunityScanRadius", 90f);
             //Scribe_Values.Look(ref stopPlanningAtPercent, "stopPlanningAtPercent", 0.98f);
@@ -88,7 +78,6 @@ namespace BulkLoadForTransporters.Core
 
 
             // --- Bulk Unloading ---
-            Scribe_Values.Look(ref minFreeSpaceToUnloadCarrierPct, "minFreeSpaceToUnloadCarrierPct", 0.5f);
             Scribe_Values.Look(ref reserveCarrierOnUnload, "reserveCarrierOnUnload", false);
             Scribe_Values.Look(ref autoOpenCarrierGear, "autoOpenCarrierGear", true);
 
@@ -103,7 +92,6 @@ namespace BulkLoadForTransporters.Core
             this.enableBulkLoadPortal = defaultSettings.enableBulkLoadPortal;
             this.enableBulkLoadVehicles = defaultSettings.enableBulkLoadVehicles;
             this.enableBulkUnloadCarriers = defaultSettings.enableBulkUnloadCarriers;
-            this.enableBulkConstructionDelivery = defaultSettings.enableBulkConstructionDelivery;
 
             // --- General Settings ---
             this.AiUpdateFrequency = defaultSettings.AiUpdateFrequency;
@@ -112,10 +100,6 @@ namespace BulkLoadForTransporters.Core
             this.enableSoftlockCleaner = defaultSettings.enableSoftlockCleaner;
             this.cheatIgnoreInventoryMass = defaultSettings.cheatIgnoreInventoryMass;
 
-            // --- Construction Delivery ---
-            this.constructionGroupingGridSize = defaultSettings.constructionGroupingGridSize;
-            this.constructionChainScanRadius = defaultSettings.constructionChainScanRadius;
-
             // --- Bulk Loading Settings ---
             this.opportunityScanRadius = defaultSettings.opportunityScanRadius;
             this.pathfindingHeuristicCandidates = defaultSettings.pathfindingHeuristicCandidates;
@@ -123,7 +107,6 @@ namespace BulkLoadForTransporters.Core
             this.autoOpenTransporterContents = defaultSettings.autoOpenTransporterContents;
 
             // --- Bulk Unloading Settings ---
-            this.minFreeSpaceToUnloadCarrierPct = defaultSettings.minFreeSpaceToUnloadCarrierPct;
             this.reserveCarrierOnUnload = defaultSettings.reserveCarrierOnUnload;
             this.autoOpenCarrierGear = defaultSettings.autoOpenCarrierGear;
 

@@ -12,7 +12,6 @@
   <JobDef>
     <defName>UnloadPackAnimalInBulk</defName>
     <driverClass>BulkLoadForTransporters.Jobs.JobDriver_UnloadPackAnimalInBulk</driverClass>
-    <reportString>BulkLoadForTransporters.ReportString.UnloadingCarrier</reportString>
     <suspendable>false</suspendable>
     <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
   </JobDef>
@@ -23,13 +22,5 @@
     <suspendable>false</suspendable>
     <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
   </JobDef>
-
-  <JobDef>
-	<defName>DeliverToConstructionInBulk</defName>
-	<driverClass>BulkLoadForTransporters.Jobs.JobDriver_DeliverConstructionInBulk</driverClass>
-	<suspendable>false</suspendable>
-	<allowOpportunisticPrefix>true</allowOpportunisticPrefix>
-  </JobDef>
-    
 
 </Defs>

@@ -31,16 +31,32 @@ namespace BulkLoadForTransporters.Core
         private static CentralLoadManager _instance;
         public static CentralLoadManager Instance => _instance;
         public CentralLoadManager(Game game) { }
-        public override void LoadedGame() { base.LoadedGame(); _instance = this; }
-        public override void StartedNewGame() { base.StartedNewGame(); _instance = this; }
-        public override void FinalizeInit()
+        public override void LoadedGame()
         {
-            base.FinalizeInit();
-            _instance = this;
+            base.LoadedGame();
             if (allTasks == null)
             {
                 allTasks = new Dictionary<Map, ExposableIntHeadedDict<LoadTaskState>>();
             }
+            _instance = this;
+        }
+        public override void StartedNewGame()
+        {
+            base.StartedNewGame();
+            if (allTasks == null)
+            {
+                allTasks = new Dictionary<Map, ExposableIntHeadedDict<LoadTaskState>>();
+            }
+            _instance = this;
+        }
+        public override void FinalizeInit()
+        {
+            base.FinalizeInit();
+            if (allTasks == null)
+            {
+                allTasks = new Dictionary<Map, ExposableIntHeadedDict<LoadTaskState>>();
+            }
+            _instance = this;
         }
         public override void ExposeData()
         {
@@ -55,6 +71,12 @@ namespace BulkLoadForTransporters.Core
         private List<ExposableIntHeadedDict<LoadTaskState>> wrapperValues;
         private LoadTaskState GetOrCreateTaskState(IManagedLoadable task)
         {
+            if (allTasks == null)
+            {
+                Log.WarningOnce("[BulkLoad] CentralLoadManager.allTasks was null during GetOrCreateTaskState; lazy-initialized. This indicates an abnormal lifecycle ordering (likely caused by another mod patching Game.FinalizeInit or similar). Functionality preserved, but please report this with full Player.log.", 0x4C7A4D01);
+                allTasks = new Dictionary<Map, ExposableIntHeadedDict<LoadTaskState>>();
+            }
+            if (task == null) return null;
             var map = task.GetMap();
             var taskID = task.GetUniqueLoadID();
             if (map == null || taskID < 0) return null;
@@ -72,6 +94,8 @@ namespace BulkLoadForTransporters.Core
         }
         private LoadTaskState GetTaskState(IManagedLoadable task)
         {
+            if (allTasks == null) return null;
+            if (task == null) return null;
             var map = task.GetMap();
             var taskID = task.GetUniqueLoadID();
             if (map == null || taskID < 0) return null;

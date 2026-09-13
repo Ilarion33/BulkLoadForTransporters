@@ -3,7 +3,6 @@
 // Core/Utils/WorkGiver_Utility.cs
 using BulkLoadForTransporters.Core.Adapters;
 using BulkLoadForTransporters.Core.Interfaces;
-using BulkLoadForTransporters.HarmonyPatches.DeliverConstruction;
 using PickUpAndHaul;
 using RimWorld;
 using System.Collections.Generic;
@@ -405,13 +404,6 @@ namespace BulkLoadForTransporters.Core.Utils
             var settings = LoadedModManager.GetMod<Core.BulkLoadForTransportersMod>().GetSettings<Core.Settings>();
             float scanRadiusSquared = settings.opportunityScanRadius * settings.opportunityScanRadius;
 
-            // 整合“感知过滤器”的范围限制
-            if (PerceptionFilterController.IsActive)
-            {
-                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "  - Perception Filter is ACTIVE. Using the smaller of the two radii.");
-                scanRadiusSquared = Mathf.Min(scanRadiusSquared, PerceptionFilterController.RadiusSquared);
-            }
-
             // 统一扫描所有潜在的可装载目标类型
             var allPossibleTargets = new List<Thing>();
             foreach (var scanner in Extensibility_Utility.OpportunisticTargetScanners)
@@ -430,13 +422,6 @@ namespace BulkLoadForTransporters.Core.Utils
             .OrderBy(t => pawn.Position.DistanceToSquared(t.Position)))
             {
                 DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"    - Evaluating target: '{targetThing.LabelCap}' at {targetThing.Position}...");
-
-                // 首先，检查小人是否有资格处理这个工地
-                if (targetThing is IConstructible constructible && !JobDriver_Utility.CanPawnWorkOnSite(pawn, constructible))
-                {
-                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => "      - Check FAILED: Pawn cannot work on this site (e.g., needs construction skill).");
-                    continue;
-                }
 
                 // --- 阶段一：廉价的“个体”初筛 ---
                 IManagedLoadable individualAdapter = null;
@@ -529,103 +514,5 @@ namespace BulkLoadForTransporters.Core.Utils
             return job != null && job.targetQueueA.Any();
         }
 
-        /// <summary>
-        /// The universal logic for chaining to the next optimal construction job.
-        /// Can be called from an EndSession Toil or a Harmony patch after a cleanup job.
-        /// It performs a highly optimized, perception-filtered scan to find the best next target.
-        /// </summary>
-        /// <param name="pawn">The pawn looking for the next job.</param>
-        public static void TryChainToNextConstructionJob(Pawn pawn)
-        {
-            DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"{pawn.LabelShort} is attempting to chain to the next construction job.");
-
-            // --- 激活并配置“感知过滤器” ---
-            var settings = LoadedModManager.GetMod<BulkLoadForTransportersMod>().GetSettings<Settings>();
-            int GridSize = settings.constructionGroupingGridSize;
-
-            if (settings.constructionChainScanRadius <= 1f)
-            {
-                DebugLogger.LogMessage(LogCategory.WorkGiver, () => "  - Job chaining for construction is disabled in settings. Ending chain.");
-                return;
-            }
-
-            PerceptionFilterController.IsActive = true;
-            PerceptionFilterController.Center = pawn.Position;
-            PerceptionFilterController.RadiusSquared = settings.constructionChainScanRadius * settings.constructionChainScanRadius;
-            OptimisticHaulingController.IsInBulkPlanningPhase = true;
-
-            try
-            {
-                var nearbyConstructionSites = pawn.Map.listerThings.ThingsInGroup(ThingRequestGroup.Blueprint)
-                    .Concat(pawn.Map.listerThings.ThingsInGroup(ThingRequestGroup.BuildingFrame))
-                    .Where(t =>
-                        t.Faction == pawn.Faction &&
-                        !t.IsForbidden(pawn) &&
-                        !Compatibility_Utility.IsIncompatibleConstructionThing(t)) // For ReplaceStuff
-                    .OfType<IConstructible>()
-                    .Where(c => JobDriver_Utility.CanPawnWorkOnSite(pawn, c));
-                    //.ToList();
-
-                if (!nearbyConstructionSites.Any())
-                {
-                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => "  - No nearby, workable construction sites found within perception filter. Ending chain.");
-                    return;
-                }
-
-                // --- “海选即决选”逻辑 ---
-                Thing bestTargetSoFar = null;
-                float minDistanceSq = float.MaxValue;
-                var evaluatedGroupIDs = new HashSet<int>();
-
-                foreach (var site in nearbyConstructionSites)
-                {
-                    var siteThing = site as Thing;
-                    int gridID = Gen.HashCombineInt(siteThing.Position.x / GridSize, siteThing.Position.z / GridSize);
-                    if (evaluatedGroupIDs.Contains(gridID)) continue;
-
-                    evaluatedGroupIDs.Add(gridID);
-
-                    var groupAdapter = ConstructionGroupAdapter.TryCreate(site, pawn);
-                    //CentralLoadManager.Instance.RegisterOrUpdateTask(groupAdapter);
-
-                    if (groupAdapter != null && HasPotentialBulkWork(pawn, groupAdapter))
-                    {
-                        foreach (var member in groupAdapter.GetJobTargets())
-                        {
-                            var memberConstructible = member as IConstructible;
-                            if (memberConstructible != null && memberConstructible.TotalMaterialCost().Any(cost => memberConstructible.ThingCountNeeded(cost.thingDef) > 0))
-                            {
-                                float distanceSq = pawn.Position.DistanceToSquared(member.Position);
-                                if (distanceSq < minDistanceSq)
-                                {
-                                    minDistanceSq = distanceSq;
-                                    bestTargetSoFar = member;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (bestTargetSoFar != null)
-                {
-                    var finalAdapter = ConstructionGroupAdapter.TryCreate(bestTargetSoFar as IConstructible, pawn);
-                    if (TryGiveBulkJob(pawn, finalAdapter, out Job nextJob) && nextJob.def != JobDefOf.Wait)
-                    {
-                        DebugLogger.LogMessage(LogCategory.WorkGiver, () => $"    - Successfully created job '{nextJob.def.defName}'. Attempting to chain...");
-                        pawn.jobs.jobQueue.EnqueueFirst(nextJob);
-                    }
-                }
-                else
-                {
-                    CentralLoadManager.Instance.ReleaseClaimsForPawn(pawn);
-                    DebugLogger.LogMessage(LogCategory.WorkGiver, () => "  - No nearby groups with available work found. Ending chain.");
-                }
-            }
-            finally
-            {
-                PerceptionFilterController.IsActive = false;
-                OptimisticHaulingController.IsInBulkPlanningPhase = false;
-            }
-        }
     }
 }

@@ -77,7 +77,18 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
             // 复刻原版的完成消息逻辑
             if (!__instance.AnyInGroupHasAnythingLeftToLoad)
             {
-                Messages.Message("MessageFinishedLoadingTransporters".Translate(), __instance.parent, MessageTypeDefOf.TaskCompletion, true);
+                CompShuttle comp = __instance.parent.GetComp<CompShuttle>();
+                if (comp == null || comp.AllRequiredThingsLoaded)
+                {
+                    if (comp != null)
+                    {
+                        Messages.Message("MessageFinishedLoadingShuttle".Translate(__instance.parent.Named("SHUTTLE")), __instance.parent, MessageTypeDefOf.TaskCompletion, true);
+                    }
+                    else
+                    {
+                        Messages.Message("MessageFinishedLoadingTransporters".Translate(), __instance.parent, MessageTypeDefOf.TaskCompletion, true);
+                    }
+                }
             }
 
             return false;

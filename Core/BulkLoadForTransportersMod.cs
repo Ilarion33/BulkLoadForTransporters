@@ -157,41 +157,6 @@ namespace BulkLoadForTransporters.Core
 
             listingStandard.Gap(28f);
 
-
-            // --- 批量搬砖模块 ---
-            //DrawFeatureHeader(listingStandard,
-            //    "BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery".Translate(),
-            //    ref settings.enableBulkConstructionDelivery,
-            //    "BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip".Translate());
-
-            //if (settings.enableBulkConstructionDelivery)
-            //{
-            //    listingStandard.Gap(8f);
-                                
-            //    // --- 地块分组大小设置 ---
-            //    listingStandard.Label(
-            //        "BulkLoadForTransporters.Settings.ConstructionGroupingGridSize".Translate(settings.constructionGroupingGridSize),
-            //        -1f,
-            //        "BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip".Translate());
-            //    settings.constructionGroupingGridSize = (int)listingStandard.Slider(settings.constructionGroupingGridSize, 16, 128);
-            //    listingStandard.Gap(8f);
-
-            //    // --- 接力扫描半径设置 ---
-            //    string chainRadiusValue = (settings.constructionChainScanRadius <= 1f)
-            //        ? "BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled".Translate().ToString()
-            //        : settings.constructionChainScanRadius.ToString("F0");
-            //    listingStandard.Label(
-            //        "BulkLoadForTransporters.Settings.ConstructionChainScanRadius".Translate(chainRadiusValue),
-            //        -1f,
-            //        "BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip".Translate());
-            //    settings.constructionChainScanRadius = (int)listingStandard.Slider(settings.constructionChainScanRadius, 1f, 60f);
-
-            //}
-
-
-
-            //listingStandard.Gap(8f);
-
             // --- 批量装载模块 ---
             DrawFeatureHeader(listingStandard,
                 "BulkLoadForTransporters.Settings.Header.BulkLoad".Translate(),
@@ -225,7 +190,7 @@ namespace BulkLoadForTransporters.Core
 
             
 
-            if (settings.enableBulkLoadTransporters || settings.enableBulkLoadPortal || settings.enableBulkConstructionDelivery)
+            if (settings.enableBulkLoadTransporters || settings.enableBulkLoadPortal)
             {                        
 
                 listingStandard.Gap(8f);
@@ -273,13 +238,6 @@ namespace BulkLoadForTransporters.Core
                 listingStandard.CheckboxLabeled("BulkLoadForTransporters.Settings.AutoOpenCarrierGear".Translate(),
                                             ref settings.autoOpenCarrierGear,
                                             "BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip".Translate());
-
-                listingStandard.Gap(8f);
-
-                // Min Free Space to Unload Carrier Setting
-                listingStandard.Label("BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct".Translate(settings.minFreeSpaceToUnloadCarrierPct.ToStringPercent()), -1f,
-                                      "BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct.Tooltip".Translate());
-                settings.minFreeSpaceToUnloadCarrierPct = listingStandard.Slider(settings.minFreeSpaceToUnloadCarrierPct, 0.1f, 0.9f);
                                 
             }
             listingStandard.Gap(8f);

@@ -68,8 +68,7 @@ namespace BulkLoadForTransporters.Core
             // If the pawn is currently doing one of our jobs, they are fine.
             if (pawn.jobs?.curJob != null &&
                 (JobDefRegistry.IsLoadingJob(pawn.jobs.curJob.def) || 
-                JobDefRegistry.IsUnloadingJob(pawn.jobs.curJob.def) || 
-                JobDefRegistry.IsCleanupJob(pawn.jobs.curJob.def)))
+                JobDefRegistry.IsUnloadingJob(pawn.jobs.curJob.def)))
             {
                 return;
             }

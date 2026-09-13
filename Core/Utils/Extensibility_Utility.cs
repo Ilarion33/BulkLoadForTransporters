@@ -52,21 +52,9 @@ namespace BulkLoadForTransporters.Core.Utils
             OpportunisticTargetScanners.Add(pawn => pawn.Map.listerThings.ThingsInGroup(ThingRequestGroup.Transporter));
             OpportunisticTargetScanners.Add(pawn => pawn.Map.listerThings.ThingsInGroup(ThingRequestGroup.MapPortal));
 
-            OpportunisticTargetScanners.Add(pawn => pawn.Map.listerThings.ThingsInGroup(ThingRequestGroup.Blueprint));
-            OpportunisticTargetScanners.Add(pawn => pawn.Map.listerThings.ThingsInGroup(ThingRequestGroup.BuildingFrame));
-
             // 注册原版运输仓和传送门的 Adapter 工厂
             AdapterFactories.Add((t, p) => t.TryGetComp<CompTransporter>() is CompTransporter comp ? LoadTransportersAdapter.TryCreate(comp) : null);
             AdapterFactories.Add((t, p) => t is MapPortal portal ? MapPortalAdapter.TryCreate(portal) : null);
-
-            AdapterFactories.Add((t, p) => {
-                if (t is IConstructible constructible && !(t is Blueprint_Install))
-                {
-                    // 将所有验证逻辑委托给安全的工厂方法
-                    return ConstructionSiteAdapter.TryCreate(constructible, p);
-                }
-                return null;
-            });
         }
 
         /// <summary>
@@ -82,13 +70,6 @@ namespace BulkLoadForTransporters.Core.Utils
             {
                 // 如果种子 Thing 本身无效，则不创建任何 Adapter
                 return null;
-            }
-
-
-            // 对于建设任务，我们总是创建一个新的群体 Adapter
-            if (thing is IConstructible constructible)
-            {
-                return ConstructionGroupAdapter.TryCreate(constructible, pawn);
             }
 
             // 对于运输仓，Adapter 本身就通过 groupID 代表了群体

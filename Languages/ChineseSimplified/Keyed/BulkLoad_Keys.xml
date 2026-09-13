@@ -11,9 +11,6 @@
   <BulkLoadForTransporters.ReportString.Unloading>正在批量卸载{0}。</BulkLoadForTransporters.ReportString.Unloading>
   <BulkLoadForTransporters.ReportString.Unloading_Generic>正在批量卸载</BulkLoadForTransporters.ReportString.Unloading_Generic>
 
-  <BulkLoadForTransporters.ReportString.DeliveringTo>正在批量搬运建材到{0}</BulkLoadForTransporters.ReportString.DeliveringTo>
-  <BulkLoadForTransporters.ReportString.DeliveringTo_Generic>正在批量搬运建材中</BulkLoadForTransporters.ReportString.DeliveringTo_Generic>
-
 	<!-- Right-Click Float Menu Option (右键菜单) -->
   <BulkLoadForTransporters.PriorityLoadCommand>优先批量装载{0}</BulkLoadForTransporters.PriorityLoadCommand>
   <BulkLoadForTransporters.PriorityUnloadCommand>优先批量卸载{0}</BulkLoadForTransporters.PriorityUnloadCommand>
@@ -45,19 +42,9 @@
   <BulkLoadForTransporters.Settings.Header.BulkUnload>启用批量卸载驮兽</BulkLoadForTransporters.Settings.Header.BulkUnload>
   <BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>附加功能的相关设置：批量卸载驮兽和其他运输单位。</BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>
   <BulkLoadForTransporters.Settings.Header.General>通用设置</BulkLoadForTransporters.Settings.Header.General>
-  <BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery>启用批量配送建材</BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery>
-  <BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip>用于开启或关闭整个为蓝图和建筑框架批量运送材料功能的总开关。</BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip>
-
   <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>强制将剩余物放入背包 (无视负重)</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>
   <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>启用后，在配送后小人手上剩余的任何物品，都将被强制放回背包，即使这会导致超重。这可以防止物品被丢在地上，略微牺牲真实性，确保工作更流畅。</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>
 	
-  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius>任务接力半径(格): {0} </BulkLoadForTransporters.Settings.ConstructionChainScanRadius>
-  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip>在完成一次建材配送后，殖民者会在此半径内寻找下一个需要建材的工地以形成“接力”。\n默认值: 15。设为0可完全关闭工地的任务接力功能。</BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip>
-  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled>已禁用</BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled>
-
-  <BulkLoadForTransporters.Settings.ConstructionGroupingGridSize>工地分组地块大小(格): {0}x{0}</BulkLoadForTransporters.Settings.ConstructionGroupingGridSize>
-  <BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip>决定了附近的工地如何被分组以进行统一规划。更大的地块意味着小人一次会为更多的工地做计划；更小的地块则更具局部性。\n默认值: 32x32。</BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip>
-  
   <BulkLoadForTransporters.Settings.AiUpdateFrequency>更新频率 (Ticks): {0}</BulkLoadForTransporters.Settings.AiUpdateFrequency>
   <BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>较低的值意味着殖民者响应更快，但可能消耗更多性能。较高的值可以提升性能。\n默认值: 60 (1秒)。</BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>
   
@@ -66,9 +53,6 @@
 	
   <BulkLoadForTransporters.Settings.EnableContinuousLoading>启用“装载直到完成”指令</BulkLoadForTransporters.Settings.EnableContinuousLoading>
   <BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>增加一个右键指令，使殖民者在一个区域内连续执行装载运输工具的任务，直到所有任务完成。</BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>
-  
-  <BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct>卸载驮兽所需最小背包空间: {0}</BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct>
-  <BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct.Tooltip>殖民者必须拥有至少这么多的背包可用空间，才能开始一项新的“批量卸载驮兽”任务。这可以防止背包快满的殖民者进行低效率的长途跋涉。他们会优先去清空自己的背包。\n默认值: 50%。</BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct.Tooltip>
   
   <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>批量卸载时预定驮兽</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>
   <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>决定在卸货过程中是否预定驮兽。\n\n启用：任务不会被中断，行为与原版一致。\n\n禁用：如果有其他任务（如牵引）需要此驮兽，批量卸货任务会自动取消。</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>

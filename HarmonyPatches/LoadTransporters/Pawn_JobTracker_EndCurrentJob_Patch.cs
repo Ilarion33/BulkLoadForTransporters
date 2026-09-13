@@ -35,13 +35,8 @@ namespace BulkLoadForTransporters.HarmonyPatches.LoadTransporters
                 return;
             }
 
-            // 检查是否有排队的 Job，并且这个 Job 是我们的“清理信使”
             var queuedJob = ___pawn.jobs.jobQueue.FirstOrDefault();
-            if (queuedJob != null && queuedJob.job.loadID == JobDriver_Utility.CleanupJobLoadID)
-            {
-                DebugLogger.LogMessage(LogCategory.Manager, () => $"EndCurrentJob_Patch: Next job is a cleanup task ({queuedJob.job.def.defName}). RETAINING claims for {___pawn.LabelShort}.");
-            }
-            else if (queuedJob != null && queuedJob.job.def == jobToEnd.def)
+            if (queuedJob != null && queuedJob.job.def == jobToEnd.def)
             {
                 DebugLogger.LogMessage(LogCategory.Manager, () => $"[EndCurrentJob Patch] RETAINING claims for {___pawn.LabelShort}. Reason: Chaining to a job of the same type ('{jobToEnd.def.defName}').");
             }

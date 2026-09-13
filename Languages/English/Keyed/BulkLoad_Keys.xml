@@ -11,9 +11,6 @@
   <BulkLoadForTransporters.ReportString.Unloading>Bulk unloading {0}.</BulkLoadForTransporters.ReportString.Unloading>
   <BulkLoadForTransporters.ReportString.Unloading_Generic>Bulk unloading</BulkLoadForTransporters.ReportString.Unloading_Generic>
 
-<BulkLoadForTransporters.ReportString.DeliveringTo>Bulk delivering materials to {0}</BulkLoadForTransporters.ReportString.DeliveringTo>
-<BulkLoadForTransporters.ReportString.DeliveringTo_Generic>Bulk delivering materials</BulkLoadForTransporters.ReportString.DeliveringTo_Generic>
-
   <!-- Right-Click Float Menu Option -->
   <BulkLoadForTransporters.PriorityLoadCommand>Prioritize bulk loading {0}</BulkLoadForTransporters.PriorityLoadCommand>
   <BulkLoadForTransporters.PriorityUnloadCommand>Prioritize bulk unloading {0}</BulkLoadForTransporters.PriorityUnloadCommand>
@@ -45,18 +42,8 @@
   <BulkLoadForTransporters.Settings.Header.BulkUnload>Enable Bulk Unload Carriers</BulkLoadForTransporters.Settings.Header.BulkUnload>
   <BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>Settings for the additional feature: unloading pack animals and other carriers in bulk.</BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>
   <BulkLoadForTransporters.Settings.Header.General>General Settings</BulkLoadForTransporters.Settings.Header.General>
-  <BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery>Enable Bulk Delivery for Construction</BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery>
-  <BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip>Master switch to enable or disable the entire feature of bulk hauling materials for blueprints and frames.</BulkLoadForTransporters.Settings.Header.BulkConstructionDelivery.Tooltip>
-
   <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>Force surplus into inventory (ignore mass)</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>
   <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>When enabled, any surplus items left in a pawn's hands after delivery will be forced back into their inventory, even if it makes them over-encumbered. This prevents items from being dropped on the ground, ensuring a smoother workflow at the cost of realism.</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>
-	
-  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius>Job Chaining Radius (cells): {0}</BulkLoadForTransporters.Settings.ConstructionChainScanRadius>
-  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip>After completing a material delivery, a colonist will search for the next needy construction site within this radius to "chain" tasks. \nDefault: 15. Set to 0 to completely disable job chaining for construction.</BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Tooltip>
-  <BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled>Disabled</BulkLoadForTransporters.Settings.ConstructionChainScanRadius.Disabled>
-
-  <BulkLoadForTransporters.Settings.ConstructionGroupingGridSize>Site Grouping Grid Size (cells): {0}x{0}</BulkLoadForTransporters.Settings.ConstructionGroupingGridSize>
-  <BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip>Determines how nearby construction sites are grouped together for unified planning. A larger grid means colonists will plan for more sites at once; a smaller grid is more localized.\nDefault: 32x32.</BulkLoadForTransporters.Settings.ConstructionGroupingGridSize.Tooltip>
 	
   <BulkLoadForTransporters.Settings.AiUpdateFrequency>Update Frequency (Ticks): {0}</BulkLoadForTransporters.Settings.AiUpdateFrequency>
   <BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>Lower values mean faster colonists' reaction but may cost more performance. Higher values improve performance.\nDefault: 60 (1 second).</BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>
@@ -66,9 +53,6 @@
 	
   <BulkLoadForTransporters.Settings.EnableContinuousLoading>Enable 'load until complete' command</BulkLoadForTransporters.Settings.EnableContinuousLoading>
   <BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>Adds a right-click option to make colonists continuously work on loading transporters in an area until all tasks are done.</BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>
-  
-  <BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct>Min free backpack space to unload carrier: {0}</BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct>
-  <BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct.Tooltip>To start a new 'bulk unload carrier' job, a colonist's backpack must have at least this much free space. This prevents pawns with nearly-full backpacks from making inefficient trips. They will prioritize unloading their own backpack first.\nDefault: 50%.</BulkLoadForTransporters.Settings.MinFreeSpaceToUnloadCarrierPct.Tooltip>
   
   <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>Reserve carrier during bulk unload</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>
   <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>Determines if the carrier is reserved during the unloading process.\n\nEnabled: The job is uninterruptible, similar to vanilla behavior.\n\nDisabled: The job will be automatically cancelled if there is another task like roping needs the carrier.</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>
