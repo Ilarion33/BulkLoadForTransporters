@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <BulkLoadForTransporters.NoHaulPlanFound>Не удалось составить план погрузки партиями для {0}.</BulkLoadForTransporters.NoHaulPlanFound>
+  <BulkLoadForTransporters.PriorityLoadCommand>Приоритет: погрузка партиями ({0})</BulkLoadForTransporters.PriorityLoadCommand>
+  <BulkLoadForTransporters.PriorityLoadUntilCompleteCommand>Приоритет: погрузка партиями до завершения ({0})</BulkLoadForTransporters.PriorityLoadUntilCompleteCommand>
+  <BulkLoadForTransporters.PriorityUnloadCommand>Приоритет: разгрузка партиями ({0})</BulkLoadForTransporters.PriorityUnloadCommand>
+  <BulkLoadForTransporters.ReportString.Loading>Загружает партиями: {0}</BulkLoadForTransporters.ReportString.Loading>
+  <BulkLoadForTransporters.ReportString.LoadingPortal>Переносит партии груза в {0}</BulkLoadForTransporters.ReportString.LoadingPortal>
+  <BulkLoadForTransporters.ReportString.LoadingPortal_Generic>Погрузка партиями</BulkLoadForTransporters.ReportString.LoadingPortal_Generic>
+  <BulkLoadForTransporters.ReportString.Loading_Generic>Погрузка партиями</BulkLoadForTransporters.ReportString.Loading_Generic>
+  <BulkLoadForTransporters.ReportString.Unloading>Разгружает партиями: {0}.</BulkLoadForTransporters.ReportString.Unloading>
+  <BulkLoadForTransporters.ReportString.Unloading_Generic>Разгрузка партиями</BulkLoadForTransporters.ReportString.Unloading_Generic>
+  <BulkLoadForTransporters.Settings.AiUpdateFrequency>Интервал обновления (такты): {0}</BulkLoadForTransporters.Settings.AiUpdateFrequency>
+  <BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>Меньшие значения ускоряют реакцию поселенцев, но могут снижать производительность. Большие значения повышают производительность.\nПо умолчанию: 60 (1 секунда).</BulkLoadForTransporters.Settings.AiUpdateFrequency.Tooltip>
+  <BulkLoadForTransporters.Settings.AutoOpenCarrierGear>Автоматически открывать снаряжение перевозчиков</BulkLoadForTransporters.Settings.AutoOpenCarrierGear>
+  <BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip>При выборе вьючного животного автоматически открывать вкладку «Снаряжение», чтобы видеть его инвентарь.</BulkLoadForTransporters.Settings.AutoOpenCarrierGear.Tooltip>
+  <BulkLoadForTransporters.Settings.AutoOpenTransporterContents>Автоматически открывать содержимое транспорта</BulkLoadForTransporters.Settings.AutoOpenTransporterContents>
+  <BulkLoadForTransporters.Settings.AutoOpenTransporterContents.Tooltip>При выборе транспортной капсулы или шаттла автоматически открывать вкладку «Содержимое».</BulkLoadForTransporters.Settings.AutoOpenTransporterContents.Tooltip>
+  <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>Возвращать излишки в инвентарь, игнорируя массу</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass>
+  <BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>После доставки все лишние предметы, оставшиеся в руках персонажа, принудительно возвращаются в его инвентарь, даже если это приводит к перегрузке. Предметы не падают на землю, что делает работу удобнее в ущерб реалистичности.</BulkLoadForTransporters.Settings.CheatIgnoreInventoryMass.Tooltip>
+  <BulkLoadForTransporters.Settings.CleanupOnSave>Прерывать погрузку партиями при сохранении</BulkLoadForTransporters.Settings.CleanupOnSave>
+  <BulkLoadForTransporters.Settings.CleanupOnSave.Tooltip>[Рекомендуется] Эта настройка позволяет безопасно удалить мод из сохранённой игры.\n\nПри каждом сохранении текущие задания погрузки партиями безопасно прерываются. Это предотвращает зависания при загрузке такого сохранения после удаления мода.\n\nЕсли удалять мод не планируется, настройку можно выключить, чтобы сохранение игры не прерывало погрузку.</BulkLoadForTransporters.Settings.CleanupOnSave.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogManager>Журнал управления грузом</BulkLoadForTransporters.Settings.Debug.LogManager>
+  <BulkLoadForTransporters.Settings.Debug.LogManager.Tooltip>Включите, если несколько поселенцев пытаются нести один предмет, отдельные предметы игнорируются или прогресс погрузки рассчитывается неправильно. Журнал отслеживает, кто какой груз зарезервировал.</BulkLoadForTransporters.Settings.Debug.LogManager.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogPlanner>Журнал планирования</BulkLoadForTransporters.Settings.Debug.LogPlanner>
+  <BulkLoadForTransporters.Settings.Debug.LogPlanner.Tooltip>Включите, если задание началось, но персонаж застрял в ожидании, не подбирает нужные предметы, берёт неверное количество или выбирает неудобный маршрут. Журнал отслеживает выбор предметов и порядок их подбора.</BulkLoadForTransporters.Settings.Debug.LogPlanner.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogToils>Журнал выполнения действий</BulkLoadForTransporters.Settings.Debug.LogToils>
+  <BulkLoadForTransporters.Settings.Debug.LogToils.Tooltip>Включите, если персонаж не подходит к предмету, не может разгрузить его или неправильно с ним обращается, например не помещает в инвентарь или руки. Журнал пошагово отслеживает выполнение задания.</BulkLoadForTransporters.Settings.Debug.LogToils.Tooltip>
+  <BulkLoadForTransporters.Settings.Debug.LogWorkGiver>Журнал назначения работ</BulkLoadForTransporters.Settings.Debug.LogWorkGiver>
+  <BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>Включите, если поселенцы не начинают погрузку партиями, когда должны, или начинают её без необходимости. Журнал отслеживает принятие решения о начале работы.</BulkLoadForTransporters.Settings.Debug.LogWorkGiver.Tooltip>
+  <BulkLoadForTransporters.Settings.EnableContinuousLoading>Включить команду погрузки до завершения</BulkLoadForTransporters.Settings.EnableContinuousLoading>
+  <BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>Добавляет в меню правой кнопки мыши команду, по которой поселенцы непрерывно загружают транспорт в выбранной области, пока все задания не будут выполнены.</BulkLoadForTransporters.Settings.EnableContinuousLoading.Tooltip>
+  <BulkLoadForTransporters.Settings.EnableSoftlockCleaner>Включить очистку инвентаря PUAH</BulkLoadForTransporters.Settings.EnableSoftlockCleaner>
+  <BulkLoadForTransporters.Settings.EnableSoftlockCleaner.Tooltip>[Рекомендуется] Периодически проверяет инвентари Pick Up And Haul у персонажей, неспособных переносить предметы, и выкладывает содержимое на землю. Это предотвращает застревание предметов у таких персонажей.</BulkLoadForTransporters.Settings.EnableSoftlockCleaner.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.BulkLoad>Включить погрузку транспорта партиями</BulkLoadForTransporters.Settings.Header.BulkLoad>
+  <BulkLoadForTransporters.Settings.Header.BulkLoad.Tooltip>Настройки основной функции: погрузки предметов партиями в транспортные капсулы, шаттлы и другой транспорт.</BulkLoadForTransporters.Settings.Header.BulkLoad.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.BulkLoadPortal>Включить погрузку через порталы партиями</BulkLoadForTransporters.Settings.Header.BulkLoadPortal>
+  <BulkLoadForTransporters.Settings.Header.BulkLoadPortal.Tooltip>Включает перенос партий груза через провалы, выходы из пещер и другие порталы.</BulkLoadForTransporters.Settings.Header.BulkLoadPortal.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.BulkUnload>Включить разгрузку перевозчиков партиями</BulkLoadForTransporters.Settings.Header.BulkUnload>
+  <BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>Настройки дополнительной функции: разгрузки вьючных животных и других перевозчиков партиями.</BulkLoadForTransporters.Settings.Header.BulkUnload.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.Debug>Отладка (только в режиме разработчика)</BulkLoadForTransporters.Settings.Header.Debug>
+  <BulkLoadForTransporters.Settings.Header.Debug.Tooltip>Параметры журналов отладки. Подробные настройки видны и действуют только в режиме разработчика.</BulkLoadForTransporters.Settings.Header.Debug.Tooltip>
+  <BulkLoadForTransporters.Settings.Header.General>Общие настройки</BulkLoadForTransporters.Settings.Header.General>
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius>Радиус поиска попутной погрузки (клетки): {0}</BulkLoadForTransporters.Settings.OpportunityScanRadius>
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>На каком расстоянии переносчик с предметами в инвентаре Pick Up And Haul будет искать возможность загрузить их в транспортную капсулу.\nПо умолчанию: 90. Максимальное значение включает поиск по всей карте.</BulkLoadForTransporters.Settings.OpportunityScanRadius.Tooltip>
+  <BulkLoadForTransporters.Settings.OpportunityScanRadius.Unlimited>Без ограничений</BulkLoadForTransporters.Settings.OpportunityScanRadius.Unlimited>
+  <BulkLoadForTransporters.Settings.PathfindingCandidates>Точность поиска пути и производительность: {0}</BulkLoadForTransporters.Settings.PathfindingCandidates>
+  <BulkLoadForTransporters.Settings.PathfindingCandidates.Tooltip>Определяет соотношение точности поиска пути и производительности. При больших значениях маршруты становятся разумнее, но расчёты требуют больше ресурсов.\n\n1: Следующий предмет выбирается только по расстоянию по прямой. \n\n2–6: Сначала выбираются N ближайших целей по прямой, затем только для них рассчитывается реальная длина пути, чтобы найти наиболее удобную цель. \n\nПо умолчанию: 3.</BulkLoadForTransporters.Settings.PathfindingCandidates.Tooltip>
+  <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>Резервировать перевозчика во время разгрузки</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload>
+  <BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>Определяет, резервируется ли перевозчик на время разгрузки.\n\nВключено: задание нельзя прервать, как в основной игре.\n\nВыключено: задание автоматически отменяется, если перевозчик нужен для другой работы, например чтобы отвести животное на верёвке.</BulkLoadForTransporters.Settings.ReserveCarrierOnUnload.Tooltip>
+  <BulkLoadForTransporters.Settings.ResetButton>Восстановить исходные настройки</BulkLoadForTransporters.Settings.ResetButton>
+  <BulkLoadForTransporters.Settings.ResetConfirmDialog>Вы уверены, что хотите восстановить значения по умолчанию для всех настроек?</BulkLoadForTransporters.Settings.ResetConfirmDialog>
+  <BulkLoadForTransporters.Settings.VisualUnloadDelay>Задержка отображения (такты): {0}</BulkLoadForTransporters.Settings.VisualUnloadDelay>
+  <BulkLoadForTransporters.Settings.VisualUnloadDelay.Tooltip>Небольшая визуальная задержка при перемещении каждого предмета в транспорт. Меньшее значение ускоряет процесс.\nПо умолчанию: 15. Значение 0 делает перемещение мгновенным.</BulkLoadForTransporters.Settings.VisualUnloadDelay.Tooltip>
+</LanguageData>
